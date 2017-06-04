@@ -1,19 +1,11 @@
-const router = require('koa-router')()
+/**
+ * Created by CoderSong on 17/6/4.
+ */
+const router = require('koa-router')();
+const api = require('./api-router');
+const h5 = require('./h5-router');
 
-router.get('/', async (ctx, next) => {
-  await ctx.render('index', {
-    title: 'Hello Koa 2!'
-  })
-})
+router.use('/api', api.routes(), api.allowedMethods());
+router.use('/h5', h5.routes(), h5.allowedMethods());
 
-router.get('/string', async (ctx, next) => {
-  ctx.body = 'koa2 string'
-})
-
-router.get('/json', async (ctx, next) => {
-  ctx.body = {
-    title: 'koa2 json'
-  }
-})
-
-module.exports = router
+module.exports = router;
