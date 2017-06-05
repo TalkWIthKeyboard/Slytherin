@@ -23,13 +23,13 @@ let TokenSchema = new mongoose.Schema({
 });
 
 TokenSchema.pre('save', function (next) {
-  if (this.isNew) {
-    this.meta.createAt = this.meta.updateAt = Date.now()
-  }
-  else {
-    this.meta.updateAt = Date.now()
-  }
-  next()
+  if (this.isNew)
+    this.meta.createAt = this.meta.updateAt = Date.now();
+
+  else
+    this.meta.updateAt = Date.now();
+
+  next();
 });
 
 TokenSchema.statics = {
@@ -38,25 +38,25 @@ TokenSchema.statics = {
     obj[key] = value;
     return this
       .findOne(obj)
-      .exec(cb)
+      .exec(cb);
   },
 
   findById: function (id, cb) {
     return this
       .findOne({_id: id})
-      .exec(cb)
+      .exec(cb);
   },
 
   findAll: function (cb) {
     return this
       .find({})
-      .exec(cb)
+      .exec(cb);
   },
 
   deleteById: function (id, cb) {
     return this
       .remove({_id: id})
-      .exec(cb)
+      .exec(cb);
   }
 };
 
