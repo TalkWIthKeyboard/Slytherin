@@ -10,7 +10,17 @@ let UserSchema = new mongoose.Schema({
   // 账号
   account: String,
   // 密码
-  password: String
+  password: String,
+  meta: {
+    createAt: {
+      type: Date,
+      default: Date.now()
+    },
+    updateAt: {
+      type: Date,
+      default: Date.now()
+    }
+  }
 });
 
 UserSchema.pre('save', function (next) {
@@ -24,9 +34,11 @@ UserSchema.pre('save', function (next) {
 });
 
 UserSchema.statics = {
-  checkIsExist: function (username, cb) {
+  checkIsExist: function (key, value, cb) {
+    let obj = {};
+    obj[key] = value;
     return this
-      .findOne({username: username})
+      .findOne(obj)
       .exec(cb)
   },
 

@@ -9,6 +9,7 @@ const session = require('koa-session-minimal');
 const mongoose = require('mongoose');
 const WebSocket = require('ws');
 const work = require('./websocket/connector');
+const middle = require('./servers/middlewareServer');
 
 const router = require('./routes/index');
 
@@ -17,6 +18,7 @@ mongoose.connect('mongodb://localhost:27017/Slytherin');
 
 // 1. error handler
 onerror(app);
+app.use(middle.errorHandler());
 
 // 2. 配置cookie
 let cookie = {

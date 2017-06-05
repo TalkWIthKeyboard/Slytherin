@@ -2,11 +2,13 @@
  * Created by CoderSong on 17/6/4.
  */
 const router = require('koa-router')();
+const user = require('./../servers/userServer');
 
-router.get('/', async (ctx, next) => {
-  await ctx.render('index', {
-    title: 'Hello Koa 2!'
-  })
+/**
+ * 用户注册
+ */
+router.post('/user', async (ctx, next) => {
+  await user.createUser(ctx, next);
 });
 
 module.exports = router;
