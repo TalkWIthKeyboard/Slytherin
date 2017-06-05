@@ -5,15 +5,29 @@ const json = require('koa-json');
 const onerror = require('koa-onerror');
 const bodyparser = require('koa-bodyparser');
 const logger = require('koa-logger');
+const session = require('koa-session-minimal');
+const mongoose = require('mongoose');
 const WebSocket = require('ws');
 const work = require('./websocket/connector');
 
 const router = require('./routes/index');
 
-// error handler
+// 0. 配置数据库
+mongoose.connect('mongodb://localhost:27017/Slytherin');
+
+// 1. error handler
 onerror(app);
 
-// middlewares
+// 2. 配置cookie
+let cookie = {
+  maxAge: 1800000, // cookie有效时长
+  path: '/index', // 写cookie所在的路径
+  domain: 'localhost', // 写cookie所在的域名
+  httpOnly: false, // 是否只用于http请求中获取
+  overwrite: false,  // 是否允许重写
+};
+
+// 3. middlewares
 app.use(bodyparser({
   enableTypes: ['json', 'form', 'text']
 }));
@@ -25,7 +39,14 @@ app.use(views(__dirname + '/views', {
   extension: 'pug'
 }));
 
-// logger
+app.use(session({
+  key: 'SlytherinGame',
+  cookie: cookie
+}));
+
+app.use(router.routes(), router.allowedMethods());
+
+// 4.logger
 app.use(async(ctx, next) => {
   const start = new Date();
   await next();
@@ -33,14 +54,11 @@ app.use(async(ctx, next) => {
   console.log(`${ctx.method} ${ctx.url} - ${ms}ms`)
 });
 
-app.use(router.routes(), router.allowedMethods());
-
+// 5. 创建WebSocketServer:
 let server = app.listen(4000);
-// 创建WebSocketServer:
 let wss = new WebSocket.Server({
   server: server
 });
-
 work.connect(wss);
 
 
