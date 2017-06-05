@@ -4,13 +4,12 @@
 
 const mongoose = require('mongoose');
 
-let UserSchema = new mongoose.Schema({
-  // 用户名
-  username: String,
-  // 账号
-  account: String,
-  // 密码
-  password: String,
+let TokenSchema = new mongoose.Schema({
+  user: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'user'
+  },
+  token: String,
   meta: {
     createAt: {
       type: Date,
@@ -23,7 +22,7 @@ let UserSchema = new mongoose.Schema({
   }
 });
 
-UserSchema.pre('save', function (next) {
+TokenSchema.pre('save', function (next) {
   if (this.isNew)
     this.meta.createAt = this.meta.updateAt = Date.now();
 
@@ -33,7 +32,7 @@ UserSchema.pre('save', function (next) {
   next();
 });
 
-UserSchema.statics = {
+TokenSchema.statics = {
   checkIsExist: function (key, value, cb) {
     let obj = {};
     obj[key] = value;
@@ -61,4 +60,4 @@ UserSchema.statics = {
   }
 };
 
-module.exports = mongoose.model('User', UserSchema);
+module.exports = mongoose.model('Token', TokenSchema);

@@ -8,9 +8,12 @@ pub.warning = {
   'LOGIN_ERROR': {
     message: 'User not logged in !'
   },
+  'USER_ERROR': {
+    message: 'User account or password error !'
+  },
   'CREATE_USER_ERROR': {
-    message: 'User name or account already exists!'
-  }
+    message: 'User name or account already exists !'
+  },
 };
 
 /**

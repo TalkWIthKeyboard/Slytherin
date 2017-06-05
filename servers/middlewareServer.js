@@ -2,6 +2,7 @@
  * Created by CoderSong on 17/6/5.
  */
 
+const _ = require('underscore');
 const response = require('./responseServer');
 const error = require('./../code/responseCode');
 let pub = {};
@@ -11,8 +12,23 @@ let pub = {};
  * @returns {function(*, *)}
  */
 pub.checkLogin = () => {
+  let whiteList = [{
+    url: '/api/user',
+    type: 'POST'
+  },{
+    url: '/api/login',
+    type: 'POST'
+  },{
+    url: '/h5/',
+    type: 'GET'
+  }];
+
   return async (ctx, next) => {
-    if (!!ctx.session) await next();
+    let flag = false;
+    _.each(whiteList, (obj) => {
+      flag = obj.url === ctx.request.url && obj.type === ctx.request.method ? true : flag;
+    });
+    if (_.keys(ctx.session).length !== 0 || flag) await next();
     else throw error.builder(error.warning.LOGIN_ERROR.message, 410);
   }
 };

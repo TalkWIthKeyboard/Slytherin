@@ -46,6 +46,7 @@ app.use(session({
   cookie: cookie
 }));
 
+app.use(middle.checkLogin());
 app.use(router.routes(), router.allowedMethods());
 
 // 4.logger
