@@ -84,7 +84,6 @@ let checkParams = (params, query, keyList, queryList, scb, fcb) => {
  * @param ctx
  * @param body 对象数据
  * @param model
- * @param cb
  */
 pub.saveObj = async (ctx, body, model) => {
 

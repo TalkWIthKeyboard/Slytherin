@@ -14,7 +14,7 @@ const middle = require('./servers/middlewareServer');
 const router = require('./routes/index');
 
 // 0. 配置数据库
-mongoose.connect('mongodb://localhost:27017/Slytherin');
+mongoose.connect('mongodb://115.159.1.222:27016/Slytherin');
 
 // 1. error handler
 onerror(app);
@@ -57,7 +57,7 @@ app.use(async(ctx, next) => {
 });
 
 // 5. 创建WebSocketServer:
-let server = app.listen(4000);
+let server = app.listen(5000);
 let wss = new WebSocket.Server({
   server: server
 });
