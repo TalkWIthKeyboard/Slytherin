@@ -11,4 +11,11 @@ router.post('/user', async (ctx, next) => {
   await user.createUser(ctx, next);
 });
 
+/**
+ * 用户登录
+ */
+router.post('/login', async (ctx, next) => {
+  await user.loginUser(ctx, next);
+});
+
 module.exports = router;
