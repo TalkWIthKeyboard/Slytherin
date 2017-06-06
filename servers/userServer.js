@@ -49,6 +49,7 @@ let makeToken = async (user) => {
  */
 pub.createUser = async (ctx, next) => {
   try {
+    console.log(ctx.request.body);
     let body = await check.checkBodyPromise(ctx.request.body, user, null);
     let _account = await user.checkIsExist('account', body.account);
     let _username = await user.checkIsExist('username', body.username);
@@ -86,6 +87,5 @@ pub.loginUser = async (ctx, next) => {
     throw error.builder(err);
   }
 };
-
 
 module.exports = pub;

@@ -25,8 +25,8 @@ pub.checkLogin = () => {
     url: '/test/showAll',
     type: 'GET'
   },{
-    url: '/test/setName',
-    type: 'POST'
+    url: '/test/setName/a',
+    type: 'GET'
   }];
 
   return async (ctx, next) => {

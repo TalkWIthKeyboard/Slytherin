@@ -1,6 +1,8 @@
 const router = require('koa-router')();
-var redis   = require('redis');
-var client  = redis.createClient('6379', '127.0.0.1');
+let redis   = require('redis');
+let client  = redis.createClient('6379', '127.0.0.1');
+
+let pub = {}
 
 function logBefore(msg = '') {
     console.log("=========> Start " + msg + "... <=========");
@@ -10,7 +12,7 @@ function logAfter(msg = '') {
     console.log("=========>   End " + msg + "... <=========");
 }
 
-var set = async function(key, value) {
+pub.set = async (key, value) => {
     logBefore('Set');
     await new Promise((resolve, reject) => {
         client.set(key, value, function (err, reply) {
@@ -21,7 +23,7 @@ var set = async function(key, value) {
     logAfter('Set');
 };
 
-var get = async function(key) {
+pub.get = async (key) => {
     logBefore('Get');
     var ret = "";
     await new Promise((resolve, reject) => {
@@ -35,7 +37,7 @@ var get = async function(key) {
     return ret;
 };
 
-var setJSON = async function(key, value) {
+pub.setJSON = async (key, value) => {
     logBefore('Set');
     await new Promise((resolve, reject) => {
         client.set(key, JSON.stringify(value), function (err, reply) {
@@ -46,7 +48,7 @@ var setJSON = async function(key, value) {
     logAfter('Set');
 };
 
-var getJSON = async function(key) {
+pub.getJSON = async (key) => {
     logBefore('Get');
     var ret = "";
     await new Promise((resolve, reject) => {
@@ -60,9 +62,4 @@ var getJSON = async function(key) {
     return JSON.parse(ret);
 };
 
-module.exports = {
-    set: set,
-    get: get,
-    setJSON: setJSON,
-    getJSON: getJSON
-};
+module.exports = pub;
