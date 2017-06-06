@@ -1,0 +1,9 @@
+{
+	"key": "the key of the room",	// 记录房间的KEY值
+	"startTime": 1496719483,		// Timestamp, 记录开始时间
+	"players": [					// 玩家列表
+		"sessionId1",				// 玩家i的Session ID
+		"sessionId2",
+		"sessionId3",
+	]
+}

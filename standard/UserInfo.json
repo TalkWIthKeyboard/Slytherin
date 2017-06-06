@@ -1,0 +1,5 @@
+{
+	"sessionId": "the session id of player",	// 记录房间的KEY值
+	"startTime": 1496719483,					// Timestamp, 记录进入房间时间
+	"other_info": "待补充"
+}

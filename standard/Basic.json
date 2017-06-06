@@ -1,0 +1,10 @@
+{
+	"startTime": 1496719483,	// Timestamp, 记录开始时间
+	"status": "running",		// 记录运行状态
+	"romeList": [				// 房间列表
+		"key1",					// 房间i的KEY
+		"key2",
+		"key3"
+	]
+
+}

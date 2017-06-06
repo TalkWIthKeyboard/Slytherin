@@ -22,10 +22,10 @@ pub.checkLogin = () => {
     url: '/h5/',
     type: 'GET'
   },{
-    url: '/test/',
+    url: '/test/showAll',
     type: 'GET'
   },{
-    url: '/test/',
+    url: '/test/setName',
     type: 'POST'
   }];
 
