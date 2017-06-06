@@ -3,6 +3,7 @@
  */
 
 const jwt = require('jsonwebtoken');
+const _ = require('underscore');
 const check = require('./checkServer');
 const user = require('./../model/user');
 const token = require('./../model/token');
@@ -75,11 +76,13 @@ pub.loginUser = async (ctx, next) => {
     let _user = await user.checkIsExist('account', body.account);
     if (!!_user && _user.password === body.password) {
       let token = await makeToken(_user);
-      if (!ctx.session)
+      if (_.keys(ctx.session).length === 0){
+        console.log('hello');
         ctx.session = {
           'account': _user.account,
           'username': _user.username
         };
+      }
       await response.resSuccessBuilder(ctx, {'token': token});
     } else
       throw error.builder(error.warning.USER_ERROR.message, 410);

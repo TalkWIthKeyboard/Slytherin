@@ -23,8 +23,8 @@ app.use(middle.errorHandler());
 // 2. 配置cookie
 let cookie = {
   maxAge: 1800000, // cookie有效时长
-  path: '/index', // 写cookie所在的路径
-  domain: 'localhost', // 写cookie所在的域名
+  // path: '/index', // 写cookie所在的路径
+  // domain: 'localhost', // 写cookie所在的域名
   httpOnly: false, // 是否只用于http请求中获取
   overwrite: false,  // 是否允许重写
 };
