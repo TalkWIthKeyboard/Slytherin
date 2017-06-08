@@ -2,7 +2,6 @@
  * Created by CoderSong on 17/6/4.
  */
 
-const User = require('./user').user;
 const RoomUser = require('./user').roomUser;
 const Room = require('./room');
 // users的结构: Map(roomId: Map(userId: {user},))
@@ -10,54 +9,19 @@ let users = new Map();
 let pub = {};
 
 /**
- * 房间内广播
- * @param wss
- * @param ws
- * @param roomId 房间id
- * @param otherData 发送给非自己客户端的信息
- * @param myData 发送给自己客户端的信息
- */
-let broadcast = (wss, ws, roomId, otherData, myData) => {
-  wss.clients.forEach(function each(client) {
-    if (client.readyState === WebSocket.OPEN) {
-      client !== ws
-        ? client.send(JSON.stringify(otherData))
-        : client.send(JSON.stringify(myData))
-    }
-  });
-};
-
-/**
- * 单播给自己
- * @param wss
- * @param ws
- * @param data
- */
-let sendToMe = (wss, ws, data) => {
-  wss.clients.forEach(function each(client) {
-    if (client.readyState === WebSocket.OPEN)
-      if (client === ws) client.send(JSON.stringify(data))
-  });
-};
-
-
-/**
  * Map转String
  * @param map
- * @param type 信息状态
  * @returns {string}
  */
-let mapToString = (map, type) => {
-  let str = '{';
-  str += `type: ${type}, users:`;
+let mapToString = (map) => {
+  let str = '[';
   for (let item of map.entries()) {
     item[1].id = item[0];
     str += `${JSON.stringify(item[1])},`;
   }
-  str.substring(0, str.length - 2);
-  return `${str}}`;
+  str = str.substring(0, -2);
+  return `${str}]`;
 };
-
 
 /**
  * Obj转String
@@ -75,14 +39,18 @@ let MapObjToString = (roomId, socketId) => {
  * @returns string
  * @constructor
  */
-let GetRoomNumber = () => {
+let GetRoomNumber = (map) => {
   let str = '[';
-  for (let item of users.entries())
-    str += `${JSON.stringify({'roomId': item[0], 'number': item[1].players.length, 'limit': item[1].number})},`;
-  str.substring(0, str.length - 2);
+  for (let item of map.entries())
+    str += `${JSON.stringify({
+      'roomId': item[0], 
+      'number': item[1].players.size, 
+      'limit': item[1].number,
+      'type': item[1].type
+    })},`;
+  if (users.size > 0) str = str.slice(0, -1);
   return `${str}]`;
 };
-
 
 /**
  * 房间准备阶段的逻辑
@@ -92,37 +60,45 @@ let GetRoomNumber = () => {
 let workTypeRoom = (socketIO, socket) => {
   let roomId = socket.handshake.query.roomId;
   let socketId = socket.id;
+  // 大厅页面的socketId
+  let roomSocketId = socket.handshake.query.socketId;
 
   // 1. 进入房间
   socket.join(roomId);
+  // 单播该用户房间内的信息
+  socketIO.to(socketId).emit('enter', mapToString(users.get(roomId).players));
   // 广播房间内的玩家有人加入
-  socketIO.in(roomId).emit('join', MapObjToString(roomId, socketId));
+  socketIO.in(roomId).emit('join', MapObjToString(roomId, roomSocketId));
 
   // 2. 玩家进行准备
   socket.on('ready', () => {
-    let _user = users.get(roomId).get(socketId);
+    let _room = users.get(roomId);
+    let _user = _room.get(roomSocketId);
     if (!_user.type) _user.changeType();
-    // 广播房间内的玩家有人准备
-    socketIO.in(roomId).emit('ready', socketId);
+    if (_room.checkStart())
+      // 游戏开始
+      _room.gameStart();
+    else
+      // 广播房间内的玩家有人准备
+      socketIO.in(roomId).emit('ready', roomSocketId);
   });
 
   // 3. 玩家取消准备
   socket.on('noReady', () => {
-    let _user = users.get(roomId).get(socketId);
+    let _user = users.get(roomId).get(roomSocketId);
     if (_user.type) _user.changeType();
     // 广播房间内的玩家有人取消准备
-    socketIO.in(roomId).emit('noReady', socketId);
+    socketIO.in(roomId).emit('noReady', roomSocketId);
   });
 
   // 4. 玩家退出房间
   socket.on('disconnect', () => {
     let room = user.get(roomId);
-    if (room) room.exitRoom(socketId);
+    if (room) room.exitRoom(roomSocketId);
     // 广播房间内的玩家有人退出房间
-    socketIO.in(roomId).emit('disconnect', socketId);
+    socketIO.in(roomId).emit('disconnect', roomSocketId);
     socket.leave(roomId);
   });
-
 };
 
 /**
@@ -133,22 +109,51 @@ let workTypeRoom = (socketIO, socket) => {
 let workTypeHall = (socketIO, socket) => {
   let socketId = socket.id;
 
-  // 1. 向改用户发送所有房间人数消息
-  socketIO.to(socketId).emit('roomNumber', GetRoomNumber());
+  // 0. 向该用户发送自己的socketId
+  socketIO.to(socketId).emit('socketId', socketId);
+  // 1. 向该用户发送所有房间人数消息
+  socketIO.to(socketId).emit('roomNumber', GetRoomNumber(users));
 
   // 2. 玩家加入房间
   socket.on('join', message => {
     let msg = JSON.parse(message);
     let _user = new RoomUser(msg.name, msg.roomId);
-    let room = users.get(msg.roomId);
+    let room = users.get(msg.roomId) || false;
     if (room) room.joinRoom(socketId, _user);
     else users.set(msg.roomId, new Room(socketId, _user));
     // 向大厅所有玩家通知房间人数变化
-    socketIO.send('roomNumber', GetRoomNumber());
-  })
+    socketIO.emit('roomNumber', GetRoomNumber(users));
+  });
 
+  // 3. 玩家进入大厅
+  socket.on('enter', message => {
+    let msg = JSON.parse(message);
+    // 玩家是从其他房间退出来的
+    if (msg.roomId !== '')
+      // 向大厅所有玩家通知房间人数变化
+      socketIO.send('roomNumber', GetRoomNumber(users));
+  });
 };
 
+/**
+ * 游戏开始阶段
+ * @param socketIO
+ * @param socket
+ */
+let workTypePlay = (socketIO, socket) => {
+  let socketId = socket.id;
+  let roomId = socket.handshake.query.roomId;
+  let roomSocketId = socket.handshake.query.socketId;
+
+  setInterval(() => {
+    socketIO.to(socketId).emit('start', mapToString(users.get(roomId).players));
+  }, 120);
+
+  socket.on('state', message => {
+    let msg = JSON.parse(message);
+    users.get(roomId).get(roomSocketId).timeChange(msg.position, msg.state, msg.blood);
+  });
+};
 
 /**
  * socketIO连接函数
@@ -168,6 +173,7 @@ pub.connect = (socketIO => {
         break;
       // 2. 游戏开始阶段
       case 'Play':
+        workTypePlay(socketIO, socket);
         break;
     }
   })

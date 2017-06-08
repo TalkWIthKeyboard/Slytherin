@@ -2,6 +2,8 @@
  * Created by CoderSong on 17/6/8.
  */
 
+const User = require('./user').user;
+
 function Room(socketId, user, name) {
   // 房间内的玩家
   this.players = new Map();
@@ -9,8 +11,6 @@ function Room(socketId, user, name) {
   this.type = 'Room';
   // 房间人数上限
   this.number = 2;
-
-  this.joinRoom(socketId, user);
 
   /**
    * 玩家加入房间
@@ -30,10 +30,25 @@ function Room(socketId, user, name) {
   };
 
   /**
+   * 将待机玩家转换为游戏玩家
+   */
+  let transform = () => {
+    let _players = new Map();
+    for (let item in this.players.entries()) {
+      let position = {};
+      let camp = '';
+      let state = '';
+      _players.set(item[0], new User(item[1].name, position, camp, state, 100, item[1].roomId));
+    }
+    this.players = _players;
+  };
+
+  /**
    * 游戏开始
    */
   this.gameStart = () => {
     this.type = 'Play';
+    transform();
   };
 
   /**
@@ -46,12 +61,9 @@ function Room(socketId, user, name) {
     return true;
   };
 
-  /**
-   * 检查是否还能加入房间
-   */
-  this.checkJoin = () => {
-    return this.players.length < this.number;
-  };
+
+
+  this.joinRoom(socketId, user);
 }
 
 module.exports = Room;
