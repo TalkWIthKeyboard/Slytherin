@@ -8,6 +8,7 @@ const logger = require('koa-logger');
 const session = require('koa-session-minimal');
 const mongoose = require('mongoose');
 const WebSocket = require('ws');
+const io = require('socket.io');
 const work = require('./websocket/connector');
 const middle = require('./servers/middlewareServer');
 
@@ -59,10 +60,8 @@ app.use(async(ctx, next) => {
 
 // 5. 创建WebSocketServer:
 let server = app.listen(5000);
-let wss = new WebSocket.Server({
-  server: server
-});
-work.connect(wss);
+let socketIO = io(server);
+work.connect(socketIO);
 
 
 module.exports = app;
