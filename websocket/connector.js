@@ -19,7 +19,7 @@ let mapToString = (map) => {
     item[1].id = item[0];
     str += `${JSON.stringify(item[1])},`;
   }
-  str = str.substring(0, -2);
+  str = str.substring(0, - 2);
   return `${str}]`;
 };
 
@@ -43,12 +43,12 @@ let GetRoomNumber = (map) => {
   let str = '[';
   for (let item of map.entries())
     str += `${JSON.stringify({
-      'roomId': item[0], 
-      'number': item[1].players.size, 
+      'roomId': item[0],
+      'number': item[1].players.size,
       'limit': item[1].number,
       'type': item[1].type
     })},`;
-  if (users.size > 0) str = str.slice(0, -1);
+  if (users.size > 0) str = str.slice(0, - 1);
   return `${str}]`;
 };
 
@@ -74,7 +74,7 @@ let workTypeRoom = (socketIO, socket) => {
   socket.on('ready', () => {
     let _room = users.get(roomId);
     let _user = _room.get(roomSocketId);
-    if (!_user.type) _user.changeType();
+    if (! _user.type) _user.changeType();
     if (_room.checkStart())
       // 游戏开始
       _room.gameStart();
@@ -93,7 +93,7 @@ let workTypeRoom = (socketIO, socket) => {
 
   // 4. 玩家退出房间
   socket.on('disconnect', () => {
-    let room = user.get(roomId);
+    let room = users.get(roomId);
     if (room) room.exitRoom(roomSocketId);
     // 广播房间内的玩家有人退出房间
     socketIO.in(roomId).emit('disconnect', roomSocketId);
@@ -164,19 +164,19 @@ pub.connect = (socketIO => {
     let pageType = socket.handshake.query.type;
     switch (pageType) {
       // 0. 大厅阶段
-      case 'Hall':
-        workTypeHall(socketIO, socket);
-        break;
+    case 'Hall':
+      workTypeHall(socketIO, socket);
+      break;
       // 1. 房间准备阶段
-      case 'Room':
-        workTypeRoom(socketIO, socket);
-        break;
+    case 'Room':
+      workTypeRoom(socketIO, socket);
+      break;
       // 2. 游戏开始阶段
-      case 'Play':
-        workTypePlay(socketIO, socket);
-        break;
+    case 'Play':
+      workTypePlay(socketIO, socket);
+      break;
     }
-  })
+  });
 });
 
 

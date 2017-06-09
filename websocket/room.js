@@ -61,8 +61,6 @@ function Room(socketId, user, name) {
     return true;
   };
 
-
-
   this.joinRoom(socketId, user);
 }
 

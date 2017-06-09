@@ -48,8 +48,8 @@ function RoomUser(name, roomId) {
    * 改变玩家准备状态
    */
   this.changeType = () => {
-    this.type = !this.type;
-  }
+    this.type = ! this.type;
+  };
 }
 
 module.exports = {
