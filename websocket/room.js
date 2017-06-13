@@ -11,6 +11,7 @@ function Room(socketId, user, name) {
   this.type = 'Room';
   // 房间人数上限
   this.number = 2;
+  this.name = name;
 
   /**
    * 玩家加入房间
