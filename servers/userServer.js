@@ -5,6 +5,7 @@
 const jwt = require('jsonwebtoken');
 const _ = require('underscore');
 const check = require('./checkServer');
+const crypto = require('crypto');
 const user = require('./../model/user');
 const token = require('./../model/token');
 const error = require('./../code/responseCode');
@@ -56,8 +57,13 @@ pub.createUser = async (ctx, next) => {
     let _username = await user.checkIsExist('username', body.username);
     if (!!_account || !!_username)
       throw error.builder(error.warning.CREATE_USER_ERROR.message, 410);
-    else
+    else {
+      // 加密
+      let shasum = crypto.createHash('md5');
+      shasum.update(body.password);
+      body.password = shasum.digest('hex');
       await check.saveObj(ctx, body, user);
+    }
   } catch (err) {
     throw error.builder(err);
   }
@@ -74,6 +80,14 @@ pub.loginUser = async (ctx, next) => {
   try {
     let body = await check.checkBodyPromise(ctx.request.body, null, ['account', 'password']);
     let _user = await user.checkIsExist('account', body.account);
+
+    // 加密
+    let shasum = crypto.createHash('md5');
+    if (!!_user) {
+      shasum.update(_user.password);
+      _user.password = shasum.digest('hex');
+    }
+
     if (!!_user && _user.password === body.password) {
       let token = await makeToken(_user);
       if (_.keys(ctx.session).length === 0){

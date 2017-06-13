@@ -9,6 +9,7 @@
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "dependencies": {
+    "crypto": "0.0.3",
     "debug": "^2.6.3",
     "eslint": "^3.19.0",
     "jsonwebtoken": "^7.4.1",
@@ -24,8 +25,10 @@
     "koa-views": "^5.2.1",
     "mongoose": "^4.10.4",
     "nodemon": "^1.11.0",
+    "promise": "^7.1.1",
     "pug": "^2.0.0-rc.1",
     "redis": "^2.7.1",
+    "socket.io": "^2.0.2",
     "underscore": "^1.8.3",
     "ws": "^3.0.0"
   },
