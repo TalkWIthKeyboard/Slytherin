@@ -7,6 +7,7 @@ const Room = require('./room');
 // users的结构: Map(roomId: Map(userId: {user},))
 let users = new Map();
 let pub = {};
+let roomNumber = 0;
 
 /**
  * Map转String
@@ -21,6 +22,14 @@ let mapToString = (map) => {
   }
   str = str.substring(0, - 2);
   return `${str}]`;
+};
+
+/**
+ * 对RoomId进行自增
+ */
+let getRoomId = () => {
+  roomNumber ++;
+  return roomNumber;
 };
 
 /**
@@ -98,6 +107,8 @@ let workTypeRoom = (socketIO, socket) => {
     // 广播房间内的玩家有人退出房间
     socketIO.in(roomId).emit('disconnect', roomSocketId);
     socket.leave(roomId);
+    // 关闭房间
+    if (room.players.size === 0) users.delete(roomId);
   });
 };
 
@@ -112,26 +123,49 @@ let workTypeHall = (socketIO, socket) => {
   // 0. 向该用户发送自己的socketId
   socketIO.to(socketId).emit('socketId', socketId);
   // 1. 向该用户发送所有房间人数消息
-  socketIO.to(socketId).emit('roomNumber', GetRoomNumber(users));
+  socketIO.to(socketId).emit('roomNumber', JSON.stringify({'room':GetRoomNumber(users)}));
 
   // 2. 玩家加入房间
   socket.on('join', message => {
     let msg = JSON.parse(message);
-    let _user = new RoomUser(msg.name, msg.roomId);
-    let room = users.get(msg.roomId) || false;
-    if (room) room.joinRoom(socketId, _user);
-    else users.set(msg.roomId, new Room(socketId, _user));
-    // 向大厅所有玩家通知房间人数变化
-    socketIO.emit('roomNumber', GetRoomNumber(users));
+    if (!!msg.name && !!msg.roomId) {
+      let _user = new RoomUser(msg.name, msg.roomId);
+      let room = users.get(msg.roomId) || false;
+      if (room) room.joinRoom(socketId, _user);
+      else users.set(msg.roomId, new Room(socketId, _user));
+      // 向大厅所有玩家通知房间人数变化
+      socketIO.emit('roomNumber', GetRoomNumber(users));
+    } else {
+      socketIO.to(socketId).emit('error');
+    }
   });
 
-  // 3. 玩家进入大厅
+  // 3. 玩家创建房间
+  socket.on('create', message => {
+    let msg = JSON.parse(message);
+
+    if (!!msg.user && !!msg.room) {
+      let roomId = getRoomId();
+      let _user = new RoomUser(msg.user.name, roomId);
+      users.set(roomId, new Room(socketId, _user, msg.room.name));
+      socketIO.to(socketId).emit('create');
+    } else {
+      socketIO.to(socketId).emit('error');
+    }
+  });
+
+  // 4. 玩家进入大厅
   socket.on('enter', message => {
     let msg = JSON.parse(message);
-    // 玩家是从其他房间退出来的
-    if (msg.roomId !== '')
+
+    if (!!msg.roomId) {
+      // 玩家是从其他房间退出来的
+      if (msg.roomId !== '')
       // 向大厅所有玩家通知房间人数变化
-      socketIO.send('roomNumber', GetRoomNumber(users));
+        socketIO.send('roomNumber', GetRoomNumber(users));
+    } else {
+      socketIO.to(socketId).emit('error');
+    }
   });
 };
 
@@ -146,7 +180,7 @@ let workTypePlay = (socketIO, socket) => {
   let roomSocketId = socket.handshake.query.socketId;
 
   setInterval(() => {
-    socketIO.to(socketId).emit('start', mapToString(users.get(roomId).players));
+    socketIO.to(socketId).emit('state', mapToString(users.get(roomId).players));
   }, 120);
 
   socket.on('state', message => {

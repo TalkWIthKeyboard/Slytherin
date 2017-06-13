@@ -7,7 +7,7 @@ const bodyparser = require('koa-bodyparser');
 const logger = require('koa-logger');
 const session = require('koa-session-minimal');
 const mongoose = require('mongoose');
-const WebSocket = require('ws');
+const cors = require('koa-cors');
 const io = require('socket.io');
 const work = require('./websocket/connector');
 const middle = require('./servers/middlewareServer');
@@ -37,6 +37,8 @@ app.use(bodyparser({
 app.use(json());
 app.use(logger());
 app.use(require('koa-static')(__dirname + '/public'));
+
+app.use(cors());
 
 app.use(views(__dirname + '/views', {
   extension: 'pug'

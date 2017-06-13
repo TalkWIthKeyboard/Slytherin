@@ -81,10 +81,8 @@ pub.loginUser = async (ctx, next) => {
 
     // 加密
     let shasum = crypto.createHash('md5');
-    if (!!_user) {
-      shasum.update(_user.password);
-      _user.password = shasum.digest('hex');
-    }
+    shasum.update(body.password);
+    body.password = shasum.digest('hex');
 
     if (!!_user && _user.password === body.password) {
       let token = await makeToken(_user);
