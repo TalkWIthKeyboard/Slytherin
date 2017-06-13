@@ -22,8 +22,8 @@ pub.checkLogin = () => {
     url: '/h5/',
     type: 'GET'
   },{
-    url: '/test/showAll',
-    type: 'GET'
+    url: '/test/index',
+    type: 'POST'
   },{
     url: '/test/setName/a',
     type: 'GET'
