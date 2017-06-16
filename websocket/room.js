@@ -4,13 +4,11 @@
 
 const User = require('./user').user;
 
-function Room(socketId, user, name) {
+function Room(socketId, user, name, number) {
   // 房间内的玩家
   this.players = new Map();
-  // 房间状态 （'Room'是房间准备状态，'Play'是房间游戏开始状态）
-  this.type = 'Room';
   // 房间人数上限
-  this.number = 2;
+  this.number = number;
   this.name = name;
 
   /**
@@ -48,8 +46,8 @@ function Room(socketId, user, name) {
    * 游戏开始
    */
   this.gameStart = () => {
-    this.type = 'Play';
-    transform();
+    // this.type = 'Play';
+    // transform();
   };
 
   /**

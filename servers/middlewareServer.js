@@ -19,7 +19,10 @@ pub.checkLogin = () => {
     url: '/api/login',
     type: 'POST'
   },{
-    url: '/h5/',
+    url: '/h5/Hall',
+    type: 'GET'
+  },{
+    url: '/h5/Room',
     type: 'GET'
   },{
     url: '/test/index',

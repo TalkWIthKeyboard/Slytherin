@@ -3,9 +3,15 @@
  */
 const router = require('koa-router')();
 
-router.get('/', async (ctx, next) => {
+router.get('/Hall', async (ctx, next) => {
   await ctx.render('index', {
-    title: 'Hello Koa 2!'
+    title: 'Hall'
+  })
+});
+
+router.get('/Room', async (ctx, next) => {
+  await ctx.render('room', {
+    title: 'Room'
   })
 });
 

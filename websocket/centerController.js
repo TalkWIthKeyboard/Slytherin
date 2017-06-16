@@ -41,7 +41,7 @@ function  CenterController(roomId, socket) {
   let chooseRole = () => {
     socket.on(`chooseRole ${roomId}`, msg => {
       let message = JSON.parse(msg);
-      
+
     });
 
     while (!chooseRoleOver()) {
@@ -107,3 +107,5 @@ function  CenterController(roomId, socket) {
     }
   }
 }
+
+module.exports = CenterController;
