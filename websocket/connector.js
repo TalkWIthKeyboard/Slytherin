@@ -75,9 +75,9 @@ let workTypeRoom = (socketIO, socket) => {
   // 1. 进入房间
   socket.join(roomId);
   // 单播该用户房间内的信息
-  socketIO.to(socketId).emit('enter', mapToString(users.get(roomId).players));
+  socketIO.to(socketId).emit('enter', JSON.stringify({'users':mapToString(users.get(roomId).players)}));
   // 广播房间内的玩家有人加入
-  socketIO.in(roomId).emit('join', MapObjToString(roomId, roomSocketId));
+  socketIO.in(roomId).emit('join', JSON.stringify({'user':MapObjToString(roomId, roomSocketId)}));
 
   // 2. 玩家进行准备
   socket.on('ready', () => {
@@ -123,7 +123,7 @@ let workTypeHall = (socketIO, socket) => {
   // 0. 向该用户发送自己的socketId
   socketIO.to(socketId).emit('socketId', socketId);
   // 1. 向该用户发送所有房间人数消息
-  socketIO.to(socketId).emit('roomNumber', JSON.stringify({'room':GetRoomNumber(users)}));
+  socketIO.to(socketId).emit('roomNumber', JSON.stringify({'room': GetRoomNumber(users)}));
 
   // 2. 玩家加入房间
   socket.on('join', message => {
@@ -134,7 +134,7 @@ let workTypeHall = (socketIO, socket) => {
       if (room) room.joinRoom(socketId, _user);
       else users.set(msg.roomId, new Room(socketId, _user));
       // 向大厅所有玩家通知房间人数变化
-      socketIO.emit('roomNumber', GetRoomNumber(users));
+      socketIO.emit('roomNumber', JSON.stringify({'room': GetRoomNumber(users)}));
     } else {
       socketIO.to(socketId).emit('error');
     }
@@ -182,6 +182,9 @@ let workTypePlay = (socketIO, socket) => {
   setInterval(() => {
     socketIO.to(socketId).emit('state', mapToString(users.get(roomId).players));
   }, 120);
+
+
+
 
   socket.on('state', message => {
     let msg = JSON.parse(message);

@@ -3,33 +3,42 @@
  */
 
 /**
- * 用户类
- * @param name 玩家姓名
- * @param position 玩家位置
- * @param camp 玩家的阵营
- * @param state 玩家的状态（状态机）
- * @param blood 玩家的血量
- * @param roomId 玩家所在的房间
+ * 游戏中的玩家类
  */
-function User(name, position, camp, state, blood, roomId) {
+function User(name) {
   this.name = name;
-  this.position = position;
-  this.camp = camp;
-  this.state = state;
-  this.blood = blood;
-  this.roomId = roomId;
+  this.cards = [];
+  this.regions = [];
+  this.gold = 0;
+  this.role = null;
+  // 玩家是否完成这一次的游戏阶段
+  this.finish = false;
 
-  /**
-   * 随时间改变的量
-   * @param _position
-   * @param _state
-   * @param _blood
-   */
-  this.timeChange = (_position, _state, _blood) => {
-    this.position = _position;
-    this.state = _state;
-    this.blood = _blood;
+  this.chooseRole = (role) => {
+    this.role = role;
   };
+
+  this.getGold = (num) => {
+    this.gold += num;
+  };
+
+  this.drawCard = (card) => {
+    this.cards.push(card);
+  };
+
+  this.toString = () => {
+    return JSON.stringify({user: this.parser()})
+  };
+
+  this.parser = () => {
+    return {
+      name: this.name,
+      cards: this.cards,
+      regions: this.regions,
+      gold: this.gold,
+      role: this.role
+    }
+  }
 }
 
 
