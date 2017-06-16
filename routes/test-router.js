@@ -8,9 +8,7 @@ const router = require('koa-router')();
 // });
 
 router.post('/index', async (ctx, next) => {
-    console.log('hahaha');
     let data = ctx.request.body;
-    console.log(data);
 });
 
 module.exports = router;
