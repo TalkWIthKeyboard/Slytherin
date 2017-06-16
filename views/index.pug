@@ -1,7 +1,9 @@
 extends layout
 
 block content
-  h1= title
-  p Welcome to #{title}
+  p Welcome to Hall Page!
+  textarea(rows='10',cols='30',id='text')
+  button(id='create') Create
+  button(id='join') Join
 
   script(src='/javascripts/index.js')

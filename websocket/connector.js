@@ -4,8 +4,11 @@
 
 const RoomUser = require('./user').roomUser;
 const Room = require('./room');
-// users的结构: Map(roomId: Map(userId: {user},))
+const Center = require('./centerController');
+// users的结构: Map(roomId: Map(userId: {user},));
 let users = new Map();
+// players的结构: Map(roomId: CenterController);
+let players = new Map();
 let pub = {};
 let roomNumber = 0;
 
@@ -49,16 +52,16 @@ let MapObjToString = (roomId, socketId) => {
  * @constructor
  */
 let GetRoomNumber = (map) => {
-  let str = '[';
-  for (let item of map.entries())
-    str += `${JSON.stringify({
-      'roomId': item[0],
-      'number': item[1].players.size,
-      'limit': item[1].number,
-      'type': item[1].type
-    })},`;
-  if (users.size > 0) str = str.slice(0, - 1);
-  return `${str}]`;
+  let list = [];
+  for (let item of map.entries()) {
+    let obj = {};
+    obj.roomId = item[0];
+    obj.number = item[1].players.size;
+    obj.limit = item[1].number;
+    obj.name = item[1].name;
+    list.push(obj);
+  }
+  return list;
 };
 
 /**
@@ -72,12 +75,12 @@ let workTypeRoom = (socketIO, socket) => {
   // 大厅页面的socketId
   let roomSocketId = socket.handshake.query.socketId;
 
-  // 1. 进入房间
-  socket.join(roomId);
   // 单播该用户房间内的信息
   socketIO.to(socketId).emit('enter', JSON.stringify({'users':mapToString(users.get(roomId).players)}));
   // 广播房间内的玩家有人加入
   socketIO.in(roomId).emit('join', JSON.stringify({'user':MapObjToString(roomId, roomSocketId)}));
+  // 1. 进入房间
+  socket.join(roomId);
 
   // 2. 玩家进行准备
   socket.on('ready', () => {
@@ -86,7 +89,7 @@ let workTypeRoom = (socketIO, socket) => {
     if (! _user.type) _user.changeType();
     if (_room.checkStart())
       // 游戏开始
-      _room.gameStart();
+      socketIO.in(roomId).emit('start');
     else
       // 广播房间内的玩家有人准备
       socketIO.in(roomId).emit('ready', roomSocketId);
@@ -121,22 +124,23 @@ let workTypeHall = (socketIO, socket) => {
   let socketId = socket.id;
 
   // 0. 向该用户发送自己的socketId
-  socketIO.to(socketId).emit('socketId', socketId);
+  socket.emit('socketId', socketId);
   // 1. 向该用户发送所有房间人数消息
-  socketIO.to(socketId).emit('roomNumber', JSON.stringify({'room': GetRoomNumber(users)}));
+  socket.emit('roomNumber', JSON.stringify({'room': GetRoomNumber(users)}));
 
   // 2. 玩家加入房间
   socket.on('join', message => {
     let msg = JSON.parse(message);
+
     if (!!msg.name && !!msg.roomId) {
       let _user = new RoomUser(msg.name, msg.roomId);
-      let room = users.get(msg.roomId) || false;
-      if (room) room.joinRoom(socketId, _user);
-      else users.set(msg.roomId, new Room(socketId, _user));
+      let room = users.get(msg.roomId);
+      room.joinRoom(socketId, _user);
       // 向大厅所有玩家通知房间人数变化
-      socketIO.emit('roomNumber', JSON.stringify({'room': GetRoomNumber(users)}));
+      socket.broadcast.emit('roomNumber', JSON.stringify({'room': GetRoomNumber(users)}));
+      socnoket.emit('join');
     } else {
-      socketIO.to(socketId).emit('error');
+      socket.emit('error');
     }
   });
 
@@ -147,10 +151,11 @@ let workTypeHall = (socketIO, socket) => {
     if (!!msg.user && !!msg.room) {
       let roomId = getRoomId();
       let _user = new RoomUser(msg.user.name, roomId);
-      users.set(roomId, new Room(socketId, _user, msg.room.name));
-      socketIO.to(socketId).emit('create');
+      users.set(roomId, new Room(socketId, _user, msg.room.name, msg.room.number));
+      socket.broadcast.emit('roomNumber', JSON.stringify({'room': GetRoomNumber(users)}));
+      socket.emit('create');
     } else {
-      socketIO.to(socketId).emit('error');
+      socket.emit('error');
     }
   });
 
@@ -162,9 +167,9 @@ let workTypeHall = (socketIO, socket) => {
       // 玩家是从其他房间退出来的
       if (msg.roomId !== '')
       // 向大厅所有玩家通知房间人数变化
-        socketIO.send('roomNumber', GetRoomNumber(users));
+        socket.broadcast.emit('roomNumber', JSON.stringify({'room': GetRoomNumber(users)}));
     } else {
-      socketIO.to(socketId).emit('error');
+      socket.emit('error');
     }
   });
 };
@@ -179,11 +184,15 @@ let workTypePlay = (socketIO, socket) => {
   let roomId = socket.handshake.query.roomId;
   let roomSocketId = socket.handshake.query.socketId;
 
+  // 1. 连入阶段
+  if (!players.get(roomId))
+    players.set(roomId, new Center(roomId, socket));
+
+  socket.join(roomId);
+
   setInterval(() => {
     socketIO.to(socketId).emit('state', mapToString(users.get(roomId).players));
   }, 120);
-
-
 
 
   socket.on('state', message => {
