@@ -20,7 +20,7 @@ function  CenterController(roomId, socket) {
    * @returns {boolean}
    */
   let chooseRoleOver = () => {
-    for (let i = 0; i < this.users.length; i++)
+    for (let i = 0; i < this.users.length; i ++)
       if (this.users[i].role === null)
         return false;
     return true;
@@ -31,7 +31,7 @@ function  CenterController(roomId, socket) {
    * @returns {boolean}
    */
   let gameOver = () => {
-    for (let i = 0; i < this.users.length; i++)
+    for (let i = 0; i < this.users.length; i ++)
       if (this.users[i].regions.length >= 8)
         return true;
     return false;
@@ -44,7 +44,7 @@ function  CenterController(roomId, socket) {
 
     });
 
-    while (!chooseRoleOver()) {
+    while (! chooseRoleOver()) {
 
     }
 
@@ -76,11 +76,11 @@ function  CenterController(roomId, socket) {
    */
   this.workStartStage = () => {
     this.state = GAME_STATE[1];
-    for (let i = 0; i < this.users.length; i++) {
+    for (let i = 0; i < this.users.length; i ++) {
       // 1. 发钱
       this.users[i].getGold(2);
       // 2. 发牌
-      for (let j = 0; j < 4; j++)
+      for (let j = 0; j < 4; j ++)
         this.users[i].drawCard(this.deck.sendCards());
     }
   };
@@ -89,13 +89,13 @@ function  CenterController(roomId, socket) {
    *
    */
   this.playStage = () => {
-    while (!gameOver()) {
+    while (! gameOver()) {
 
     }
   };
 
   this.toString = () => {
-    return JSON.stringify({game: this.parser()})
+    return JSON.stringify({game: this.parser()});
   };
 
   this.parser = () => {
@@ -104,8 +104,8 @@ function  CenterController(roomId, socket) {
       deck: this.deck.parser(),
       role: this.role.parser(),
       state: this.state
-    }
-  }
+    };
+  };
 }
 
 module.exports = CenterController;

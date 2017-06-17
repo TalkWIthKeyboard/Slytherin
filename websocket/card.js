@@ -209,9 +209,9 @@ function Deck() {
   this.initDeck =  () => {
     for (let i in CARD_INFO) {
       let each = CARD_INFO[i];
-      for (let j = 0; j < each.num; j++) {
-        this.cards.push(new Card(i))
-      }
+      for (let j = 0; j < each.num; j ++)
+        this.cards.push(new Card(i));
+
     }
   };
 
@@ -220,7 +220,7 @@ function Deck() {
    */
   this.shuffleCards = () => {
     let len = this.cards.length;
-    for (let i = 0; i < len; i++) {
+    for (let i = 0; i < len; i ++) {
       let positionA = Math.round(Math.random() * len);
       let positionB = Math.round(Math.random() * len);
       let _card = this.cards[positionA];
@@ -234,7 +234,7 @@ function Deck() {
    */
   this.sendCards = () => {
     let card = this.cards[this.cardNum];
-    this.cardNum++;
+    this .cardNum++;
     return card;
   };
 
@@ -247,15 +247,15 @@ function Deck() {
   };
 
   this.toString = () => {
-    return JSON.stringify({desk: this.parser()})
+    return JSON.stringify({desk: this.parser()});
   };
 
   this.parser = () => {
     return {
       deck: this.cards,
       cardNum: this.cardNum
-    }
-  }
+    };
+  };
 }
 
 module.exports = Deck;

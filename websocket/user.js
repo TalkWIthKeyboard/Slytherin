@@ -27,7 +27,7 @@ function User(name) {
   };
 
   this.toString = () => {
-    return JSON.stringify({user: this.parser()})
+    return JSON.stringify({user: this.parser()});
   };
 
   this.parser = () => {
@@ -37,8 +37,8 @@ function User(name) {
       regions: this.regions,
       gold: this.gold,
       role: this.role
-    }
-  }
+    };
+  };
 }
 
 

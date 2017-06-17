@@ -79,14 +79,14 @@ function RoleDeck() {
     let positionA = Math.round(Math.random() * len);
     this.roles.reversal = this.roles.normal[positionA];
     this.roles.normal.splice(positionA, 1);
-    len--;
+    len --;
 
     // 2. 挑选牌将其正置
-    for (let i = 0; i < ROLE_NUM[num]; i++) {
+    for (let i = 0; i < ROLE_NUM[num]; i ++) {
       positionA = Math.round(Math.random() * len);
       this.roles.front.push(this.roles.normal[positionA]);
       this.roles.normal.splice(positionA, 1);
-      len--;
+      len --;
     }
   };
 
@@ -101,7 +101,7 @@ function RoleDeck() {
 
   this.parser = () => {
     return this.roles;
-  }
+  };
 }
 
 module.exports = RoleDeck;

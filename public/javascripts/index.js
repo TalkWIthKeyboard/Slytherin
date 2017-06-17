@@ -8,7 +8,7 @@ $(document).ready(function () {
   $('#create').click(function () {
     socket.emit('create', JSON.stringify({
       'user': {'name': 'hehe'},
-      'room': {'name': '来呀来呀', 'number': 2}
+      'room': {'name': 'hello', 'number': 2}
     }));
   });
 
@@ -42,5 +42,10 @@ $(document).ready(function () {
     socket.emit('disconnect');
     window.location.href = '/h5/Room';
   }
+
+  socket.on('enter', function (msg) {
+    let text = $('#text').val() + '\r\n' + msg;
+    $('#text').val(text);
+  })
 });
 

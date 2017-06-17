@@ -120,57 +120,57 @@ let workTypeRoom = (socketIO, socket) => {
  * @param socketIO
  * @param socket
  */
-let workTypeHall = (socketIO, socket) => {
+let workTypeHall = async (socketIO, socket) => {
   let socketId = socket.id;
-
-  // 0. 向该用户发送自己的socketId
-  socket.emit('socketId', socketId);
-  // 1. 向该用户发送所有房间人数消息
-  socket.emit('roomNumber', JSON.stringify({'room': GetRoomNumber(users)}));
 
   // 2. 玩家加入房间
   socket.on('join', message => {
     let msg = JSON.parse(message);
 
-    if (!!msg.name && !!msg.roomId) {
+    // 0. 向该用户发送自己的socketId
+    // 1. 向该用户发送所有房间人数消息
+    socket.emit('socketId', socketId);
+    socket.emit('room', {'room': GetRoomNumber(users)});
+
+    if (!! msg.name && !! msg.roomId) {
       let _user = new RoomUser(msg.name, msg.roomId);
       let room = users.get(msg.roomId);
       room.joinRoom(socketId, _user);
       // 向大厅所有玩家通知房间人数变化
       socket.broadcast.emit('roomNumber', JSON.stringify({'room': GetRoomNumber(users)}));
-      socnoket.emit('join');
-    } else {
+      socket.emit('join');
+    } else
       socket.emit('error');
-    }
+
   });
 
   // 3. 玩家创建房间
   socket.on('create', message => {
     let msg = JSON.parse(message);
 
-    if (!!msg.user && !!msg.room) {
+    if (!! msg.user && !! msg.room) {
       let roomId = getRoomId();
       let _user = new RoomUser(msg.user.name, roomId);
       users.set(roomId, new Room(socketId, _user, msg.room.name, msg.room.number));
       socket.broadcast.emit('roomNumber', JSON.stringify({'room': GetRoomNumber(users)}));
       socket.emit('create');
-    } else {
+    } else
       socket.emit('error');
-    }
+
   });
 
   // 4. 玩家进入大厅
   socket.on('enter', message => {
     let msg = JSON.parse(message);
 
-    if (!!msg.roomId) {
-      // 玩家是从其他房间退出来的
-      if (msg.roomId !== '')
-      // 向大厅所有玩家通知房间人数变化
-        socket.broadcast.emit('roomNumber', JSON.stringify({'room': GetRoomNumber(users)}));
-    } else {
-      socket.emit('error');
-    }
+    // 玩家是从其他房间退出来的
+    if (msg.roomId !== '')
+    // 向大厅所有玩家通知房间人数变化
+      socket.broadcast.emit('roomNumber', JSON.stringify({'room': GetRoomNumber(users)}));
+  });
+
+  socket.on('disconnect', () => {
+    // console.log('close');
   });
 };
 
@@ -185,7 +185,7 @@ let workTypePlay = (socketIO, socket) => {
   let roomSocketId = socket.handshake.query.socketId;
 
   // 1. 连入阶段
-  if (!players.get(roomId))
+  if (! players.get(roomId))
     players.set(roomId, new Center(roomId, socket));
 
   socket.join(roomId);
@@ -209,15 +209,15 @@ pub.connect = (socketIO => {
   socketIO.on('connection', socket => {
     let pageType = socket.handshake.query.type;
     switch (pageType) {
-      // 0. 大厅阶段
+        // 0. 大厅阶段
     case 'Hall':
       workTypeHall(socketIO, socket);
       break;
-      // 1. 房间准备阶段
+        // 1. 房间准备阶段
     case 'Room':
       workTypeRoom(socketIO, socket);
       break;
-      // 2. 游戏开始阶段
+        // 2. 游戏开始阶段
     case 'Play':
       workTypePlay(socketIO, socket);
       break;
