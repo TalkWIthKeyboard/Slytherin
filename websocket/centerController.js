@@ -37,18 +37,59 @@ function  CenterController(roomId, socket) {
     return false;
   };
 
+  /**
+   * 判断玩家时间是否结束
+   * @returns {boolean}
+   */
+  let playerTimeOver = () => {
+    for (let i = 0; i < this.users.length; i++)
+      if (!this.users[i].finish)
+        return false;
+    return true;
+  };
 
+  /**
+   * 游戏阶段-选择角色阶段
+   */
   let chooseRole = () => {
-    socket.on(`chooseRole ${roomId}`, msg => {
+    this.state = GAME_STATE[2];
+
+    socket.emit('chooseRole', {user: this.users[0].socketId});
+
+    socket.on('chooseRole', msg => {
       let message = JSON.parse(msg);
+      // 玩家还没有全部选择完
+      if (message.user !== this.users[this.users.length - 1].socketId) {
+        socket.emit('chooseRole', {'user': this.users[msg.num++].socketId});
 
+      } else {
+        socket.remove('chooseRole');
+        // 跳到下一个阶段
+        distributeResource();
+      }
     });
+  };
 
-    while (! chooseRoleOver()) {
+
+  let distributeResource = () => {
+    this.state = GAME_STATE[3];
+
+    socket.on('resource', msg => {
+      let message = JSON.parse(msg);
+      // if (message.user !== this.users[this.users.length - 1].socketId)
+
+    })
+  };
+
+
+
+  /**
+   * 游戏阶段-玩家时间阶段
+   */
+  let playerTime = () => {
+    while (! playerTimeOver()) {
 
     }
-
-    socket.remove(`chooseRole ${roomId}`);
   };
 
 
@@ -57,6 +98,7 @@ function  CenterController(roomId, socket) {
    * @param users
    */
   this.init = (users) => {
+    this.state = GAME_STATE[0];
     // 1. 准备牌堆
     this.deck.initDeck();
     this.deck.shuffleCards();
@@ -66,9 +108,7 @@ function  CenterController(roomId, socket) {
 
     // 3. 角色进行转换
     for (let item of users.entries())
-      this.users.push(new User(item[1].name));
-
-    this.state = '';
+      this.users.push(new User(item[1].name, item[0]));
   };
 
   /**
@@ -83,16 +123,19 @@ function  CenterController(roomId, socket) {
       for (let j = 0; j < 4; j ++)
         this.users[i].drawCard(this.deck.sendCards());
     }
+    this.playStage();
   };
+  //
+  // /**
+  //  * 游戏阶段
+  //  */
+  // this.playStage = () => {
+  //   while (! gameOver()) {
+  //
+  //   }
+  // };
 
-  /**
-   *
-   */
-  this.playStage = () => {
-    while (! gameOver()) {
 
-    }
-  };
 
   this.toString = () => {
     return JSON.stringify({game: this.parser()});

@@ -104,7 +104,7 @@ let workTypeRoom = (socketIO, socket) => {
   });
 
   // 4. 玩家退出房间
-  socket.on('disconnect', () => {
+  socket.on('exit', () => {
     let room = users.get(roomId);
     if (room) room.exitRoom(roomSocketId);
     // 广播房间内的玩家有人退出房间
@@ -112,6 +112,11 @@ let workTypeRoom = (socketIO, socket) => {
     socket.leave(roomId);
     // 关闭房间
     if (room.players.size === 0) users.delete(roomId);
+  });
+
+  // 5. 游戏开始的退出
+  socket.on('disconnect', () => {
+
   });
 };
 
@@ -131,7 +136,7 @@ let workTypeHall = async (socketIO, socket) => {
   // 2. 玩家加入房间
   socket.on('join', message => {
     let msg = JSON.parse(message);
-    
+
     let _user = new RoomUser(msg.name, msg.roomId);
     let room = users.get(msg.roomId);
     room.joinRoom(socketId, _user);
@@ -182,7 +187,7 @@ let workTypePlay = (socketIO, socket) => {
 
   // 1. 连入阶段
   if (! players.get(roomId))
-    players.set(roomId, new Center(roomId, socket));
+    players.set(roomId, new Center(users.get(roomId), socket));
 
   socket.join(roomId);
 

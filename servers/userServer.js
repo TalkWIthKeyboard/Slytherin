@@ -92,7 +92,7 @@ pub.loginUser = async (ctx, next) => {
           'username': _user.username
         };
       await response.resSuccessBuilder(ctx, {
-        'username': username,
+        'username': _user.username,
         'token': token
       });
     } else

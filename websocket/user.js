@@ -5,12 +5,13 @@
 /**
  * 游戏中的玩家类
  */
-function User(name) {
+function User(name, socketId) {
   this.name = name;
   this.cards = [];
   this.regions = [];
   this.gold = 0;
   this.role = null;
+  this.socketId = socketId;
   // 玩家是否完成这一次的游戏阶段
   this.finish = false;
 
@@ -28,6 +29,13 @@ function User(name) {
 
   this.toString = () => {
     return JSON.stringify({user: this.parser()});
+  };
+
+  this.update = (user) => {
+    this.cards = user.cards;
+    this.regions = user.regions;
+    this.gold = user.gold;
+    this.role = user.role;
   };
 
   this.parser = () => {
