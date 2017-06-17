@@ -76,7 +76,7 @@ let workTypeRoom = (socketIO, socket) => {
   let roomSocketId = socket.handshake.query.socketId;
 
   // 单播该用户房间内的信息
-  socketIO.to(socketId).emit('enter', JSON.stringify({'users':mapToString(users.get(roomId).players)}));
+  socket.emit('enter', JSON.stringify({'users':mapToString(users.get(roomId).players)}));
   // 广播房间内的玩家有人加入
   socketIO.in(roomId).emit('join', JSON.stringify({'user':MapObjToString(roomId, roomSocketId)}));
   // 1. 进入房间
@@ -123,14 +123,14 @@ let workTypeRoom = (socketIO, socket) => {
 let workTypeHall = async (socketIO, socket) => {
   let socketId = socket.id;
 
+  // 0. 向该用户发送自己的socketId
+  // 1. 向该用户发送所有房间人数消息
+  socket.emit('socketId', socketId);
+  socket.emit('roomNumber', JSON.stringify({'room': GetRoomNumber(users)}));
+
   // 2. 玩家加入房间
   socket.on('join', message => {
     let msg = JSON.parse(message);
-
-    // 0. 向该用户发送自己的socketId
-    // 1. 向该用户发送所有房间人数消息
-    socket.emit('socketId', socketId);
-    socket.emit('room', {'room': GetRoomNumber(users)});
 
     if (!! msg.name && !! msg.roomId) {
       let _user = new RoomUser(msg.name, msg.roomId);
@@ -208,6 +208,7 @@ let workTypePlay = (socketIO, socket) => {
 pub.connect = (socketIO => {
   socketIO.on('connection', socket => {
     let pageType = socket.handshake.query.type;
+    console.log(socket.handshake.query);
     switch (pageType) {
         // 0. 大厅阶段
     case 'Hall':
