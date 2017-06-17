@@ -90,6 +90,10 @@ function RoleDeck() {
     }
   };
 
+  /**
+   * 更新角色牌堆
+   * @param obj
+   */
   this.updateRoleDeck = (obj) => {
     this.roles.normal = obj.roles.normal;
     this.roles.choose = obj.roles.choose;

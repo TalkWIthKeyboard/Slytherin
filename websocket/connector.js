@@ -17,14 +17,13 @@ let roomNumber = 0;
  * @param map
  * @returns {string}
  */
-let mapToString = (map) => {
-  let str = '[';
+let parserMap = (map) => {
+  let list = [];
   for (let item of map.entries()) {
     item[1].id = item[0];
-    str += `${JSON.stringify(item[1])},`;
+    list.push(item[1]);
   }
-  str = str.substring(0, - 2);
-  return `${str}]`;
+  return list;
 };
 
 /**
@@ -41,7 +40,7 @@ let getRoomId = () => {
  * @param roomId
  */
 let MapObjToString = (roomId, socketId) => {
-  let obj = users.get(roomId).get(socketId);
+  let obj = users.get(roomId).players.get(socketId);
   obj.id = socketId;
   return JSON.stringify(obj);
 };
@@ -70,17 +69,21 @@ let GetRoomNumber = (map) => {
  * @param socket
  */
 let workTypeRoom = (socketIO, socket) => {
-  let roomId = socket.handshake.query.roomId;
+  let roomId = parseInt(socket.handshake.query.roomId);
   let socketId = socket.id;
   // 大厅页面的socketId
   let roomSocketId = socket.handshake.query.socketId;
 
-  // 单播该用户房间内的信息
-  socket.emit('enter', JSON.stringify({'users':mapToString(users.get(roomId).players)}));
-  // 广播房间内的玩家有人加入
-  socketIO.in(roomId).emit('join', JSON.stringify({'user':MapObjToString(roomId, roomSocketId)}));
   // 1. 进入房间
   socket.join(roomId);
+  // 广播房间内的玩家有人加入
+  socketIO.in(roomId).emit('enter', JSON.stringify({
+    'users': parserMap(users.get(roomId).players),
+    'room': {
+      'num': users.get(roomId).number,
+      'name': users.get(roomId).name
+    }}));
+
 
   // 2. 玩家进行准备
   socket.on('ready', () => {
@@ -107,11 +110,19 @@ let workTypeRoom = (socketIO, socket) => {
   socket.on('exit', () => {
     let room = users.get(roomId);
     if (room) room.exitRoom(roomSocketId);
-    // 广播房间内的玩家有人退出房间
-    socketIO.in(roomId).emit('disconnect', roomSocketId);
-    socket.leave(roomId);
     // 关闭房间
     if (room.players.size === 0) users.delete(roomId);
+
+    // 广播房间内的玩家有人退出房间
+    socketIO.in(roomId).emit('exit', JSON.stringify({
+      'exitUser': roomSocketId,
+      'users': parserMap(users.get(roomId).players),
+      'room': {
+        'num': users.get(roomId).number,
+        'name': users.get(roomId).name
+      }}));
+
+    socket.leave(roomId);
   });
 
   // 5. 游戏开始的退出
@@ -187,19 +198,12 @@ let workTypePlay = (socketIO, socket) => {
 
   // 1. 连入阶段
   if (! players.get(roomId))
-    players.set(roomId, new Center(users.get(roomId), socket));
+    players.set(roomId, new Center(users.get(roomId), socketIO, socket));
 
   socket.join(roomId);
 
-  setInterval(() => {
-    socketIO.to(socketId).emit('state', mapToString(users.get(roomId).players));
-  }, 120);
-
-
-  socket.on('state', message => {
-    let msg = JSON.parse(message);
-    users.get(roomId).get(roomSocketId).timeChange(msg.position, msg.state, msg.blood);
-  });
+  // 2. 游戏阶段
+  players.get(roomId).init();
 };
 
 /**
@@ -209,7 +213,6 @@ let workTypePlay = (socketIO, socket) => {
 pub.connect = (socketIO => {
   socketIO.on('connection', socket => {
     let pageType = socket.handshake.query.type;
-    console.log(socket.handshake.query);
     switch (pageType) {
         // 0. 大厅阶段
     case 'Hall':

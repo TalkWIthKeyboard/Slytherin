@@ -43,14 +43,6 @@ function Room(socketId, user, name, number) {
   };
 
   /**
-   * 游戏开始
-   */
-  this.gameStart = () => {
-    // this.type = 'Play';
-    // transform();
-  };
-
-  /**
    * 检查游戏是否可以开始
    */
   this.checkStart = () => {
