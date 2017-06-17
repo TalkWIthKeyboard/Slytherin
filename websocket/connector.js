@@ -131,17 +131,13 @@ let workTypeHall = async (socketIO, socket) => {
   // 2. 玩家加入房间
   socket.on('join', message => {
     let msg = JSON.parse(message);
-
-    if (!! msg.name && !! msg.roomId) {
-      let _user = new RoomUser(msg.name, msg.roomId);
-      let room = users.get(msg.roomId);
-      room.joinRoom(socketId, _user);
-      // 向大厅所有玩家通知房间人数变化
-      socket.broadcast.emit('roomNumber', JSON.stringify({'room': GetRoomNumber(users)}));
-      socket.emit('join', roomId);
-    } else
-      socket.emit('error');
-
+    
+    let _user = new RoomUser(msg.name, msg.roomId);
+    let room = users.get(msg.roomId);
+    room.joinRoom(socketId, _user);
+    // 向大厅所有玩家通知房间人数变化
+    socket.broadcast.emit('roomNumber', JSON.stringify({'room': GetRoomNumber(users)}));
+    socket.emit('join', msg.roomId);
   });
 
   // 3. 玩家创建房间
