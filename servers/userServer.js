@@ -91,7 +91,10 @@ pub.loginUser = async (ctx, next) => {
           'account': _user.account,
           'username': _user.username
         };
-      await response.resSuccessBuilder(ctx, {'token': token});
+      await response.resSuccessBuilder(ctx, {
+        'username': username,
+        'token': token
+      });
     } else
       throw error.builder(error.warning.USER_ERROR.message, 410);
   } catch (err) {

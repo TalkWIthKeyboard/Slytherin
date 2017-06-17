@@ -138,7 +138,7 @@ let workTypeHall = async (socketIO, socket) => {
       room.joinRoom(socketId, _user);
       // 向大厅所有玩家通知房间人数变化
       socket.broadcast.emit('roomNumber', JSON.stringify({'room': GetRoomNumber(users)}));
-      socket.emit('join');
+      socket.emit('join', roomId);
     } else
       socket.emit('error');
 
@@ -153,7 +153,7 @@ let workTypeHall = async (socketIO, socket) => {
       let _user = new RoomUser(msg.user.name, roomId);
       users.set(roomId, new Room(socketId, _user, msg.room.name, msg.room.number));
       socket.broadcast.emit('roomNumber', JSON.stringify({'room': GetRoomNumber(users)}));
-      socket.emit('create');
+      socket.emit('create', roomId);
     } else
       socket.emit('error');
 
