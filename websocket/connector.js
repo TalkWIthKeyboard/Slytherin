@@ -30,7 +30,7 @@ let parserMap = (map) => {
  * 对RoomId进行自增
  */
 let getRoomId = () => {
-  roomNumber ++;
+  roomNumber++;
   return roomNumber;
 };
 
@@ -74,36 +74,41 @@ let workTypeRoom = (socketIO, socket) => {
   // 大厅页面的socketId
   let roomSocketId = socket.handshake.query.socketId;
 
+
+  let sendMessage = (socketIO, roomId, emitCode, obj) => {
+    socketIO.in(roomId).emit(emitCode, JSON.stringify({
+      'users': parserMap(users.get(roomId).players),
+      obj,
+      'room': {
+        'num': users.get(roomId).number,
+        'name': users.get(roomId).name
+      }
+    }));
+  };
+
   // 1. 进入房间
   socket.join(roomId);
   // 广播房间内的玩家有人加入
-  socketIO.in(roomId).emit('enter', JSON.stringify({
-    'users': parserMap(users.get(roomId).players),
-    'room': {
-      'num': users.get(roomId).number,
-      'name': users.get(roomId).name
-    }}));
+  sendMessage(socketIO, roomId, 'enter');
 
 
   // 2. 玩家进行准备
   socket.on('ready', () => {
     let _room = users.get(roomId);
-    let _user = _room.get(roomSocketId);
-    if (! _user.type) _user.changeType();
+    _room.players.get(roomSocketId).changeType();
     if (_room.checkStart())
-      // 游戏开始
+    // 游戏开始
       socketIO.in(roomId).emit('start');
     else
-      // 广播房间内的玩家有人准备
-      socketIO.in(roomId).emit('ready', roomSocketId);
+    // 广播房间内的玩家有人准备
+      sendMessage(socketIO, roomId, 'enter');
   });
 
   // 3. 玩家取消准备
   socket.on('noReady', () => {
-    let _user = users.get(roomId).get(roomSocketId);
-    if (_user.type) _user.changeType();
+    users.get(roomId).players.get(roomSocketId).changeType();
     // 广播房间内的玩家有人取消准备
-    socketIO.in(roomId).emit('noReady', roomSocketId);
+    sendMessage(socketIO, roomId, 'enter');
   });
 
   // 4. 玩家退出房间
@@ -111,16 +116,12 @@ let workTypeRoom = (socketIO, socket) => {
     let room = users.get(roomId);
     if (room) room.exitRoom(roomSocketId);
     // 关闭房间
-    if (room.players.size === 0) users.delete(roomId);
-
+    if (room.players.size === 0) {
+      users.delete(roomId);
+      socket.emit('exit', JSON.stringify({'obj': {'exitUser': roomSocketId}}));
+    }
     // 广播房间内的玩家有人退出房间
-    socketIO.in(roomId).emit('exit', JSON.stringify({
-      'exitUser': roomSocketId,
-      'users': parserMap(users.get(roomId).players),
-      'room': {
-        'num': users.get(roomId).number,
-        'name': users.get(roomId).name
-      }}));
+    else sendMessage(socketIO, roomId, 'exit', {'exitUser': roomSocketId});
 
     socket.leave(roomId);
   });
@@ -136,7 +137,7 @@ let workTypeRoom = (socketIO, socket) => {
  * @param socketIO
  * @param socket
  */
-let workTypeHall = async (socketIO, socket) => {
+let workTypeHall = async(socketIO, socket) => {
   let socketId = socket.id;
 
   // 0. 向该用户发送自己的socketId
@@ -160,7 +161,7 @@ let workTypeHall = async (socketIO, socket) => {
   socket.on('create', message => {
     let msg = JSON.parse(message);
 
-    if (!! msg.user && !! msg.room) {
+    if (!!msg.user && !!msg.room) {
       let roomId = getRoomId();
       let _user = new RoomUser(msg.user.name, roomId);
       users.set(roomId, new Room(socketId, _user, msg.room.name, msg.room.number));
@@ -197,7 +198,7 @@ let workTypePlay = (socketIO, socket) => {
   let roomSocketId = socket.handshake.query.socketId;
 
   // 1. 连入阶段
-  if (! players.get(roomId))
+  if (!players.get(roomId))
     players.set(roomId, new Center(users.get(roomId), socketIO, socket));
 
   socket.join(roomId);
@@ -214,18 +215,18 @@ pub.connect = (socketIO => {
   socketIO.on('connection', socket => {
     let pageType = socket.handshake.query.type;
     switch (pageType) {
-        // 0. 大厅阶段
-    case 'Hall':
-      workTypeHall(socketIO, socket);
-      break;
-        // 1. 房间准备阶段
-    case 'Room':
-      workTypeRoom(socketIO, socket);
-      break;
-        // 2. 游戏开始阶段
-    case 'Play':
-      workTypePlay(socketIO, socket);
-      break;
+      // 0. 大厅阶段
+      case 'Hall':
+        workTypeHall(socketIO, socket);
+        break;
+      // 1. 房间准备阶段
+      case 'Room':
+        workTypeRoom(socketIO, socket);
+        break;
+      // 2. 游戏开始阶段
+      case 'Play':
+        workTypePlay(socketIO, socket);
+        break;
     }
   });
 });
