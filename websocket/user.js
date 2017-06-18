@@ -2,6 +2,9 @@
  * Created by CoderSong on 17/6/7.
  */
 
+const Region = require('./region');
+const card_info = require('./card').card_info;
+
 /**
  * 游戏中的玩家类
  */
@@ -25,6 +28,13 @@ function User(name, socketId) {
 
   this.drawCard = (card) => {
     this.cards.push(card);
+  };
+
+  this.buildHouse = (card) => {
+    this.gold -= card_info[card].cost;
+    for (let i = 0; i < cards.length; i++)
+      if (card.cardName === cards[i].cardName) cards.splice(i,1);
+    this.regions.push(new Region(card));
   };
 
   this.toString = () => {

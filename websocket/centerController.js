@@ -2,7 +2,7 @@
  * Created by CoderSong on 17/6/15.
  */
 
-const Deck = require('./card');
+const Deck = require('./card').deck;
 const Role = require('./role');
 const User = require('./user').user;
 
@@ -26,6 +26,20 @@ function  CenterController(roomId, socketIO, socket) {
     return false;
   };
 
+  /**
+   * 游戏阶段-玩家时间阶段-修建建筑
+   */
+  let buildHouse = () => {
+    this.state = GAME_STATE[5];
+
+    // msg: {'user':,'card':,}
+    socket.on(this.state, msg => {
+      let message = JSON.parse(msg);
+      this.users[message.user].buildHouse(message.card);
+      socket.emit(this.state, JSON.stringify(this.parser()));
+      socket.remove(this.state);
+    })
+  };
 
   /**
    * 游戏阶段-玩家时间阶段-分配资源
@@ -33,18 +47,21 @@ function  CenterController(roomId, socketIO, socket) {
   let distributeResource = () => {
     this.state = GAME_STATE[4];
 
+    // msg: {'user':, 'choose':}
+    // choose 1 是选金币,2 是选第一张,3 是选第二张
     socket.on(this.state, msg => {
       let message = JSON.parse(msg);
-      if (message.user !== this.users[this.users.length - 1].socketId) {
-
-      } else {
+      // 选择2块金币
+      if (message.choose === 1)
+        this.users[message.user].getGold(2);
+      else {
+        this.users[message.user].drawCard(this.deck.chooseCards(message.choose - 2));
+        socket.emit(this.state, JSON.stringify(this.parser()));
         socket.remove(this.state);
-        // 跳到下一个阶段
+        buildHouse();
       }
-
     })
   };
-
 
   /**
    * 游戏阶段-玩家时间阶段
@@ -52,13 +69,13 @@ function  CenterController(roomId, socketIO, socket) {
   var playerTime = () => {
     this.state = GAME_STATE[3];
 
-    // msg: {'user':,'info':{'cards':,'regions':,'gold':,'role'}}
+    socket.emit(this.state, JSON.stringify({user: this.users[0].socketId}));
+
+    // msg: {'user':}
     socket.on(this.state, msg => {
       let message = JSON.parse(msg);
       if (message.user !== this.users[this.users.length - 1].socketId) {
-        this.users[message.user].update(message.info);
-        socket.emit()
-
+        distributeResource();
       } else {
         socket.remove(this.state);
         // 跳到下一个阶段的选择角色
@@ -66,7 +83,6 @@ function  CenterController(roomId, socketIO, socket) {
       }
     })
   };
-
 
   /**
    * 游戏阶段-选择角色阶段
@@ -102,7 +118,6 @@ function  CenterController(roomId, socketIO, socket) {
     });
   };
 
-
   /**
    * 初始化控制器
    * @param users
@@ -120,7 +135,6 @@ function  CenterController(roomId, socketIO, socket) {
     // 4.跳转到下一个阶段
     this.workStartStage();
   };
-
 
   /**
    * 初始阶段
@@ -140,7 +154,6 @@ function  CenterController(roomId, socketIO, socket) {
     this.playStage();
   };
 
-
   /**
    * 游戏阶段
    */
@@ -150,7 +163,6 @@ function  CenterController(roomId, socketIO, socket) {
       chooseRole();
     }
   };
-
 
   this.toString = () => {
     return JSON.stringify({game: this.parser()});

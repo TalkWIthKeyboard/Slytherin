@@ -234,8 +234,22 @@ function Deck() {
    */
   this.sendCards = () => {
     let card = this.cards[this.cardNum];
-    this .cardNum++;
+    this.cardNum++;
     return card;
+  };
+
+  /**
+   * 拿两张牌选一张放在牌堆底部
+   * @param choose 0是第一张 1是第二张
+   */
+  this.chooseCards = (choose) => {
+    // 被选的牌
+    let cardA = this.cards[this.cardNum + choose];
+    // 没有被选的牌
+    let cardB = this.cards[this.cardNum + !choose];
+    this.cardNum += 2;
+    this.cards.push(cardB);
+    return cardA;
   };
 
   /**
@@ -258,5 +272,8 @@ function Deck() {
   };
 }
 
-module.exports = Deck;
+module.exports = {
+  deck: Deck,
+  card_info: CARD_INFO
+};
 

@@ -46,7 +46,7 @@ function Room(socketId, user, name, number) {
    * 检查游戏是否可以开始
    */
   this.checkStart = () => {
-    if (this.players.length !== this.number) return false;
+    if (this.players.size !== this.number) return false;
     for (let item of this.players.entries())
       if (item[1].type !== true) return false;
     return true;

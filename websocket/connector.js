@@ -91,7 +91,6 @@ let workTypeRoom = (socketIO, socket) => {
   // 广播房间内的玩家有人加入
   sendMessage(socketIO, roomId, 'enter');
 
-
   // 2. 玩家进行准备
   socket.on('ready', () => {
     let _room = users.get(roomId);
