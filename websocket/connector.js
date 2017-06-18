@@ -193,17 +193,17 @@ let workTypeHall = async(socketIO, socket) => {
  */
 let workTypePlay = (socketIO, socket) => {
   let socketId = socket.id;
-  let roomId = socket.handshake.query.roomId;
+  let roomId = parseInt(socket.handshake.query.roomId);
   let roomSocketId = socket.handshake.query.socketId;
 
   // 1. 连入阶段
   if (!players.get(roomId))
-    players.set(roomId, new Center(users.get(roomId), socketIO, socket));
+    players.set(roomId, new Center(roomId, users.get(roomId).players, socketIO, socket));
 
   socket.join(roomId);
 
   // 2. 游戏阶段
-  players.get(roomId).init();
+  // players.get(roomId).init();
 };
 
 /**

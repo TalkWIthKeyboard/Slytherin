@@ -74,7 +74,7 @@ function RoleDeck() {
   this.initRoleDeck = (num) => {
     for (let i in ROLE_INFO)
       this.roles.normal.push(new Role(i));
-    let len = this.roles.normal.length;
+    let len = this.roles.normal.length - 1;
     // 1. 挑选一张牌将其反置
     let positionA = Math.round(Math.random() * len);
     this.roles.reversal = this.roles.normal[positionA];
@@ -95,8 +95,8 @@ function RoleDeck() {
    * @param obj
    */
   this.updateRoleDeck = (obj) => {
-    this.roles.normal = obj.roles.normal;
-    this.roles.choose = obj.roles.choose;
+    this.roles.normal = obj.normal;
+    this.roles.choose = obj.choose;
   };
 
   this.toString = () => {
@@ -108,4 +108,7 @@ function RoleDeck() {
   };
 }
 
-module.exports = RoleDeck;
+module.exports = {
+  roleDeck: RoleDeck,
+  role: Role
+};

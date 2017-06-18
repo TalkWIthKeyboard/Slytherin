@@ -219,7 +219,7 @@ function Deck() {
    * 洗牌
    */
   this.shuffleCards = () => {
-    let len = this.cards.length;
+    let len = this.cards.length - 1;
     for (let i = 0; i < len; i ++) {
       let positionA = Math.round(Math.random() * len);
       let positionB = Math.round(Math.random() * len);
