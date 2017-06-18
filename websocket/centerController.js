@@ -9,7 +9,7 @@ const User = require('./user').user;
 
 let GAME_STATE = ['BEFORE_START', 'START_STAGE', 'CHOOSE_ROLE', 'PLAYER_TIME', 'DISTRIBUTE_RESOURCE', 'BUILD_HOUSE'];
 
-function  CenterController(roomId, users, socketIO, socket) {
+function  CenterController(roomId, users) {
   this.roomId = roomId;
   this.users = [];
   this.deck = new Deck();
@@ -30,7 +30,7 @@ function  CenterController(roomId, users, socketIO, socket) {
   /**
    * 游戏阶段-玩家时间阶段-修建建筑
    */
-  let buildHouse = () => {
+  let buildHouse = (socket) => {
     this.state = GAME_STATE[5];
 
     // msg: {'user':,'card':,}
@@ -38,14 +38,14 @@ function  CenterController(roomId, users, socketIO, socket) {
       let message = JSON.parse(msg);
       this.users[message.user].buildHouse(message.card);
       socket.emit(this.state, JSON.stringify(this.parser()));
-      socket.remove(this.state);
+      socket.removeAllListeners(this.state);
     })
   };
 
   /**
    * 游戏阶段-玩家时间阶段-分配资源
    */
-  let distributeResource = () => {
+  let distributeResource = (socket) => {
     this.state = GAME_STATE[4];
 
     // msg: {'user':, 'choose':}
@@ -58,7 +58,7 @@ function  CenterController(roomId, users, socketIO, socket) {
       else {
         this.users[message.user].drawCard(this.deck.chooseCards(message.choose - 2));
         socket.emit(this.state, JSON.stringify(this.parser()));
-        socket.remove(this.state);
+        socket.removeAllListeners(this.state);
         buildHouse();
       }
     })
@@ -67,7 +67,7 @@ function  CenterController(roomId, users, socketIO, socket) {
   /**
    * 游戏阶段-玩家时间阶段
    */
-  var playerTime = () => {
+  var playerTime = (socket) => {
     this.state = GAME_STATE[3];
 
     socket.emit(this.state, JSON.stringify({user: this.users[0].socketId}));
@@ -76,11 +76,11 @@ function  CenterController(roomId, users, socketIO, socket) {
     socket.on(this.state, msg => {
       let message = JSON.parse(msg);
       if (message.user !== this.users[this.users.length - 1].socketId) {
-        distributeResource();
+        // distributeResource(socket);
       } else {
-        socket.remove(this.state);
+        socket.removeAllListeners(this.state);
         // 跳到下一个阶段的选择角色
-        chooseRole();
+        // chooseRole(socket);
       }
     })
   };
@@ -88,11 +88,10 @@ function  CenterController(roomId, users, socketIO, socket) {
   /**
    * 游戏阶段-选择角色阶段
    */
-  var chooseRole = () => {
+  var chooseRole = (socket, socketIO) => {
     if (gameOver()) return;
 
     this.state = GAME_STATE[2];
-
     socket.emit(this.state, JSON.stringify({
       'user': this.users[0].socketId,
       'num': 0,
@@ -102,20 +101,23 @@ function  CenterController(roomId, users, socketIO, socket) {
     // msg: {'num':,'role':,'roles':};
     socket.on(this.state, msg => {
       let message = JSON.parse(msg);
+
+      this.users[message.num].chooseRole(new Role(message.role));
+      this.role.updateRoleDeck(message.roles);
+
       // 玩家还没有全部选择完
-      if (message.user !== this.users[this.users.length - 1].socketId) {
-        this.users[message.num].chooseRole(new Role(message.role));
-        this.role.updateRoleDeck(message.roles);
+      if (message.num !== this.users.length - 1) {
         socketIO.in(roomId).emit(this.state, JSON.stringify({
-          'user': this.users[message.num].socketId,
+          'num': message.num + 1,
+          'user': this.users[message.num + 1].socketId,
           'role': this.role.parser()
         }));
       }
       // 所有玩家已经选择完
       else {
-        socket.remove(this.state);
+        socket.removeAllListeners(this.state);
         // 跳到下一个阶段
-        // playerTime();
+        playerTime(socket);
       }
     });
   };
@@ -124,45 +126,45 @@ function  CenterController(roomId, users, socketIO, socket) {
    * 初始化控制器
    * @param users
    */
-  this.initClass = async (users) => {
-    this.state = GAME_STATE[0];
-    // 1. 准备牌堆
-    await this.deck.initDeck();
-    await this.deck.shuffleCards();
-    // 2. 准备角色堆 TODO 修改过的
-    await this.role.initRoleDeck(4);
-    // 3. 角色进行转换
-    for (let item of users.entries())
-      this.users.push(new User(item[1].name, item[0]));
-    // 4.跳转到下一个阶段
-    await this.workStartStage();
+  this.initClass = (users) => {
+      this.state = GAME_STATE[0];
+      // 1. 准备牌堆
+      this.deck.initDeck();
+      this.deck.shuffleCards();
+      // 2. 准备角色堆 TODO 修改过的
+      this.role.initRoleDeck(4);
+      // 3. 角色进行转换
+      for (let item of users.entries())
+        this.users.push(new User(item[1].name, item[0]));
+
+      // 4. 发牌 & 发钱
+      for (let i = 0; i < this.users.length; i ++) {
+        // 1. 发钱
+        this.users[i].getGold(2);
+        // 2. 发牌
+        for (let j = 0; j < 4; j ++)
+          this.users[i].drawCard(this.deck.sendCards());
+      }
   };
 
   /**
    * 初始阶段
    */
-  this.workStartStage = () => {
+  this.workStartStage = (socket, socketIO) => {
     this.state = GAME_STATE[1];
-    for (let i = 0; i < this.users.length; i ++) {
-      // 1. 发钱
-      this.users[i].getGold(2);
-      // 2. 发牌
-      for (let j = 0; j < 4; j ++)
-        this.users[i].drawCard(this.deck.sendCards());
-    }
     // 将信息发送到客户端
     socket.emit(this.state, JSON.stringify(this.parser()));
     // 跳转到下一个阶段
-    this.playStage();
+    this.playStage(socket, socketIO);
   };
 
   /**
    * 游戏阶段
    */
-  this.playStage = () => {
+  this.playStage = (socket, socketIO) => {
     // while (! gameOver()) {
       // 开始选择角色
-      chooseRole();
+      chooseRole(socket, socketIO);
     // }
   };
 

@@ -9,6 +9,8 @@ const Center = require('./centerController');
 let users = new Map();
 // players的结构: Map(roomId: CenterController);
 let players = new Map();
+// playRoomNumber的结构: Map(roomId: number);
+let playRoomNumber = new Map();
 let pub = {};
 let roomNumber = 0;
 
@@ -163,7 +165,8 @@ let workTypeHall = async(socketIO, socket) => {
     if (!!msg.user && !!msg.room) {
       let roomId = getRoomId();
       let _user = new RoomUser(msg.user.name, roomId);
-      users.set(roomId, new Room(socketId, _user, msg.room.name, msg.room.number));
+      // TODO 测试修改
+      users.set(roomId, new Room(socketId, _user, msg.room.name, 2));
       socket.broadcast.emit('roomNumber', JSON.stringify({'room': GetRoomNumber(users)}));
       socket.emit('create', roomId);
     } else
@@ -191,19 +194,18 @@ let workTypeHall = async(socketIO, socket) => {
  * @param socketIO
  * @param socket
  */
-let workTypePlay = (socketIO, socket) => {
+let workTypePlay = async (socketIO, socket) => {
   let socketId = socket.id;
   let roomId = parseInt(socket.handshake.query.roomId);
   let roomSocketId = socket.handshake.query.socketId;
 
-  // 1. 连入阶段
-  if (!players.get(roomId))
-    players.set(roomId, new Center(roomId, users.get(roomId).players, socketIO, socket));
+    socket.join(roomId);
+    // 1. 连入以后开始进行控制器实例化
+    if (!players.get(roomId))
+      players.set(roomId, new Center(roomId, users.get(roomId).players));
 
-  socket.join(roomId);
-
-  // 2. 游戏阶段
-  // players.get(roomId).init();
+    // 2. 游戏阶段
+    players.get(roomId).workStartStage(socket, socketIO);
 };
 
 /**

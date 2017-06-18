@@ -206,12 +206,11 @@ function Deck() {
   /**
    * 初始化牌堆
    */
-  this.initDeck =  () => {
+  this.initDeck = async () => {
     for (let i in CARD_INFO) {
       let each = CARD_INFO[i];
-      for (let j = 0; j < each.num; j ++)
-        this.cards.push(new Card(i));
-
+        for (let j = 0; j < each.num; j ++)
+          this.cards.push(new Card(i));
     }
   };
 
