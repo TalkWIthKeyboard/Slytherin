@@ -52,8 +52,6 @@ function  CenterController(roomId, users) {
   let distributeResource = (socket, socketIO) => {
     this.state = GAME_STATE[4];
 
-    console.log('deck:', this.deck.optionCards());
-
     socket.emit('Licensing', JSON.stringify({cards: this.deck.optionCards()}));
 
     // msg: {'user':, 'choose':, 'num':}
