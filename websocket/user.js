@@ -54,7 +54,8 @@ function User(name, socketId) {
       cards: this.cards,
       regions: this.regions,
       gold: this.gold,
-      role: this.role
+      role: this.role,
+      socketId: this.socketId
     };
   };
 }

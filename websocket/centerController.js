@@ -8,6 +8,10 @@ const Role = require('./role').role;
 const User = require('./user').user;
 
 let GAME_STATE = ['BEFORE_START', 'START_STAGE', 'CHOOSE_ROLE', 'PLAYER_TIME', 'DISTRIBUTE_RESOURCE', 'BUILD_HOUSE'];
+let GAME_END_STATE = {
+  'CHOOSE_ROLE': 'CHOOSE_ROLE_END',
+  'PLAYER_TIME': 'PLAYER_TIME_END'
+};
 
 function  CenterController(roomId, users) {
   this.roomId = roomId;
@@ -45,43 +49,53 @@ function  CenterController(roomId, users) {
   /**
    * 游戏阶段-玩家时间阶段-分配资源
    */
-  let distributeResource = (socket) => {
+  let distributeResource = (socket, socketIO) => {
     this.state = GAME_STATE[4];
 
-    // msg: {'user':, 'choose':}
+    console.log('deck:', this.deck.optionCards());
+
+    socket.emit('Licensing', JSON.stringify({cards: this.deck.optionCards()}));
+
+    // msg: {'user':, 'choose':, 'num':}
     // choose 1 是选金币,2 是选第一张,3 是选第二张
     socket.on(this.state, msg => {
       let message = JSON.parse(msg);
       // 选择2块金币
       if (message.choose === 1)
         this.users[message.user].getGold(2);
-      else {
+      else
         this.users[message.user].drawCard(this.deck.chooseCards(message.choose - 2));
-        socket.emit(this.state, JSON.stringify(this.parser()));
-        socket.removeAllListeners(this.state);
-        buildHouse();
-      }
+
+      socketIO.in(roomId).emit(this.state, JSON.stringify({
+        num: message.num++,
+        user: this.users[message.usr].socketId,
+        info: this.parser()
+      }));
+
+      socket.removeAllListeners(this.state);
+      buildHouse();
     })
   };
 
   /**
    * 游戏阶段-玩家时间阶段
    */
-  var playerTime = (socket) => {
+  var playerTime = (socket, socketIO) => {
     this.state = GAME_STATE[3];
-
-    socket.emit(this.state, JSON.stringify({user: this.users[0].socketId}));
 
     // msg: {'user':}
     socket.on(this.state, msg => {
       let message = JSON.parse(msg);
-      if (message.user !== this.users[this.users.length - 1].socketId) {
-        // distributeResource(socket);
-      } else {
-        socket.removeAllListeners(this.state);
-        // 跳到下一个阶段的选择角色
-        // chooseRole(socket);
-      }
+      if (message.user === this.users[this.users.length - 1].socketId)
+        socketIO.in(roomId).emit(GAME_END_STATE[this.state]);
+      else
+        distributeResource(socket, socketIO);
+    });
+
+    socket.on(GAME_END_STATE[this.state], () => {
+      socket.removeAllListeners(this.state);
+      socket.removeAllListeners(GAME_END_STATE[this.state]);
+      // chooseRole();
     })
   };
 
@@ -101,10 +115,10 @@ function  CenterController(roomId, users) {
     // msg: {'num':,'role':,'roles':};
     socket.on(this.state, msg => {
       let message = JSON.parse(msg);
-
       this.users[message.num].chooseRole(new Role(message.role));
       this.role.updateRoleDeck(message.roles);
 
+      console.log('num: ', message.num);
       // 玩家还没有全部选择完
       if (message.num !== this.users.length - 1) {
         socketIO.in(roomId).emit(this.state, JSON.stringify({
@@ -114,12 +128,15 @@ function  CenterController(roomId, users) {
         }));
       }
       // 所有玩家已经选择完
-      else {
-        socket.removeAllListeners(this.state);
-        // 跳到下一个阶段
-        playerTime(socket);
-      }
+      else socketIO.in(roomId).emit(GAME_END_STATE[GAME_STATE[2]]);
+
+      playerTime(socket, socketIO);
     });
+
+    socket.on(GAME_END_STATE[this.state], () => {
+      socket.removeAllListeners(this.state);
+      socket.removeAllListeners(GAME_END_STATE[this.state]);
+    })
   };
 
   /**

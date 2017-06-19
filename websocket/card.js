@@ -252,6 +252,14 @@ function Deck() {
   };
 
   /**
+   * 备选的两张牌
+   * @returns {[*,*]}
+   */
+  this.optionCards = () => {
+    return [this.cards[this.cardNum], this.cards[this.cardNum + 1]];
+  };
+
+  /**
    * 更新牌堆
    * @param msg
    */
