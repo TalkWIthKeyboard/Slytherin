@@ -15,8 +15,10 @@ function User(name, socketId) {
   this.gold = 0;
   this.role = null;
   this.socketId = socketId;
-  // 玩家是否完成这一次的游戏阶段
-  this.finish = false;
+  // 玩家是否要被翻牌
+  this.open = false;
+  // 玩家是否使用技能
+  this.skill = false;
 
   this.chooseRole = (role) => {
     this.role = role;

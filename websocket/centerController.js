@@ -5,6 +5,7 @@
 const Deck = require('./card').deck;
 const RoleDeck = require('./role').roleDeck;
 const Role = require('./role').role;
+const RoleInfo = require('./role').roleInfo;
 const User = require('./user').user;
 
 let GAME_STATE = ['BEFORE_START', 'START_STAGE', 'CHOOSE_ROLE', 'PLAYER_TIME', 'DISTRIBUTE_RESOURCE', 'BUILD_HOUSE'];
@@ -52,6 +53,7 @@ function  CenterController(roomId, users) {
   let distributeResource = (socket, socketIO) => {
     this.state = GAME_STATE[4];
 
+    console.log(this.deck.optionCards());
     socket.emit('Licensing', JSON.stringify({cards: this.deck.optionCards()}));
 
     // msg: {'user':, 'choose':, 'num':}
@@ -90,6 +92,14 @@ function  CenterController(roomId, users) {
         distributeResource(socket, socketIO);
     });
 
+    // msg: {'user':, 'num':}
+    socket.on('Skill', msg => {
+      // 技能附带效果
+      let message = JSON.parse(msg);
+      this.users[msg.num].skill = true;
+      // 继续广播
+    });
+
     socket.on(GAME_END_STATE[this.state], () => {
       socket.removeAllListeners(this.state);
       socket.removeAllListeners(GAME_END_STATE[this.state]);
@@ -113,10 +123,9 @@ function  CenterController(roomId, users) {
     // msg: {'num':,'role':,'roles':};
     socket.on(this.state, msg => {
       let message = JSON.parse(msg);
-      this.users[message.num].chooseRole(new Role(message.role));
+      this.users[message.num].chooseRole(new Role(message.role.roleName));
       this.role.updateRoleDeck(message.roles);
 
-      console.log('num: ', message.num);
       // 玩家还没有全部选择完
       if (message.num !== this.users.length - 1) {
         socketIO.in(roomId).emit(this.state, JSON.stringify({
@@ -126,7 +135,16 @@ function  CenterController(roomId, users) {
         }));
       }
       // 所有玩家已经选择完
-      else socketIO.in(roomId).emit(GAME_END_STATE[GAME_STATE[2]]);
+      else {
+        this.users.sort((a, b) => {
+          return RoleInfo[a.role.roleName].number > RoleInfo[b.role.roleName].number
+        });
+
+        socketIO.in(roomId).emit(
+          GAME_END_STATE[GAME_STATE[2]],
+          JSON.stringify({'users': this.users})
+        );
+      }
 
       playerTime(socket, socketIO);
     });

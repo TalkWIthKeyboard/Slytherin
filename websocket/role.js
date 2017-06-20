@@ -7,42 +7,42 @@ function Role(roleName) {
 }
 
 let ROLE_INFO = {
-  ASSASSIN: {
+  'ASSASSIN': {
     name: 'Assassin',
     cn_name: '刺客',
     number: 1,
   },
-  THIEF: {
+  'THIEF': {
     name: 'Thief',
     cn_name: '盗贼',
     number: 2
   },
-  MAGICIAN: {
+  'MAGICIAN': {
     name: 'Magician',
     cn_name: '魔法师',
     number: 3
   },
-  KING: {
+  'KING': {
     name: 'King',
     cn_name: '国王',
     number: 4
   },
-  BISHOP: {
+  'BISHOP': {
     name: 'Bishop',
     cn_name: '主教',
     number: 5
   },
-  BUSINESSMAN: {
+  'BUSINESSMAN': {
     name: 'Businessman',
     cn_name: '商人',
     number: 6
   },
-  ARCHITECT: {
+  'ARCHITECT': {
     name: 'Architect',
     cn_name: '建筑师',
     number: 7
   },
-  WARLORD: {
+  'WARLORD': {
     name: 'Warlord',
     cn_name: '军阀',
     number: 8
@@ -111,5 +111,6 @@ function RoleDeck() {
 
 module.exports = {
   roleDeck: RoleDeck,
-  role: Role
+  role: Role,
+  roleInfo: ROLE_INFO
 };

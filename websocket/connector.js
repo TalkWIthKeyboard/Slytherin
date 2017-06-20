@@ -199,13 +199,13 @@ let workTypePlay = async (socketIO, socket) => {
   let roomId = parseInt(socket.handshake.query.roomId);
   let roomSocketId = socket.handshake.query.socketId;
 
-    socket.join(roomId);
-    // 1. 连入以后开始进行控制器实例化
-    if (!players.get(roomId))
-      players.set(roomId, new Center(roomId, users.get(roomId).players));
+  socket.join(roomId);
+  // 1. 连入以后开始进行控制器实例化
+  if (!players.get(roomId))
+    players.set(roomId, new Center(roomId, users.get(roomId).players));
 
-    // 2. 游戏阶段
-    players.get(roomId).workStartStage(socket, socketIO);
+  // 2. 游戏阶段
+  players.get(roomId).workStartStage(socket, socketIO);
 };
 
 /**
