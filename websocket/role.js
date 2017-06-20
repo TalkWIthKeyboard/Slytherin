@@ -72,6 +72,14 @@ function RoleDeck() {
    * @param num 人数
    */
   this.initRoleDeck = (num) => {
+    this.roles['normal'] = [];
+    // 反面弃置
+    this.roles['reversal'] = null;
+    // 正面弃置
+    this.roles['front'] = [];
+    // 被选择的牌
+    this.roles['choose'] = [];
+
     for (let i in ROLE_INFO)
        this.roles.normal.push(new Role(i));
 

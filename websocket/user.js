@@ -19,6 +19,9 @@ function User(name, socketId) {
   this.open = false;
   // 玩家是否使用技能
   this.skill = false;
+  // 玩家座位
+  this.position = -1;
+  this.sortNum = -1;
 
   this.chooseRole = (role) => {
     this.role = role;
@@ -61,7 +64,8 @@ function User(name, socketId) {
       role: this.role,
       socketId: this.socketId,
       open: this.open,
-      skill: this.skill
+      skill: this.skill,
+      position: this.position
     };
   };
 }
