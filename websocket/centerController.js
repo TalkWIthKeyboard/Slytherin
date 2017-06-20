@@ -19,6 +19,8 @@ function  CenterController(roomId, users) {
   this.users = [];
   this.deck = new Deck();
   this.role = new RoleDeck();
+  // 上一轮谁是国王
+  this.king = 0;
 
   /**
    * 判断游戏是否结束
@@ -37,10 +39,11 @@ function  CenterController(roomId, users) {
   let buildHouse = (socket, socketIO) => {
     let state = GAME_STATE[5];
 
-    // msg: {'user':,'num':,'card':,}
+    // msg: {'user':,'num':,'card':}
     socket.on(state, msg => {
       let message = JSON.parse(msg);
-      this.users[message.num].buildHouse(message.card);
+      //
+      if (msg.card) this.users[message.num].buildHouse(message.card);
       socketIO.in(roomId).emit(state, JSON.stringify({
         num: message.num,
         info: this.parser()
@@ -93,32 +96,26 @@ function  CenterController(roomId, users) {
    * @param users
    */
   var reSort = (users) => {
-    
     // 1. 排列回原来的次序
     users.sort((a, b) => {
       return a.position > b.position;
     });
 
     // 2. 寻找国王
-    let p = -1;
     for (let i = 0; i < users.length; i++)
       if (users[i].role.roleName === 'KING') {
-        p = i;
+        this.king = i;
         break;
       }
 
-    if (p === -1) return;
-    else {
-      // 2. 对后面的进行排序
-      for (let i = p; i < users.length; i++) users[i].sortNum = i - p + 1;
-      users[p].sortNum = 0;
-      // 3. 对前面的进行排序
-      for (let i = 0; i < p; i++) users[i].sortNum = i + users.length - p - 1;
-      users.sort((a, b) => {
-        return a.sortNum > b.sortNum;
-      })
-    }
-
+    // 3. 对后面的进行排序
+    for (let i = this.king + 1; i < users.length; i++) users[i].sortNum = i - this.king + 1;
+    users[this.king].sortNum = 0;
+    // 4. 对前面的进行排序
+    for (let i = 0; i < this.king; i++) users[i].sortNum = i + users.length - this.king;
+    users.sort((a, b) => {
+      return a.sortNum > b.sortNum;
+    });
   };
 
   /**
@@ -130,19 +127,22 @@ function  CenterController(roomId, users) {
     // msg: {'user':}
     socket.on(state, msg => {
       let message = JSON.parse(msg);
-      if (message.user === '') {
-        socket.removeAllListeners(state);
-        // 排序为原来的顺序
-        // reSort(this.users);
-        // 一回合的结束
-        for (let i = 0; i < this.users.length; i++) {
-          this.users[i].role = null;
-          this.users[i].open = false;
-          this.users[i].skill = false;
+
+      if (message.user === '1' || message.user === '2') {
+        if (message.user === '1') {
+          // 排序为原来的顺序
+          reSort(this.users);
+          // 一回合的结束
+          for (let i = 0; i < this.users.length; i++) {
+            this.users[i].role = null;
+            this.users[i].open = false;
+            this.users[i].skill = false;
+          }
+          // 角色牌堆更新
+          this.role.initRoleDeck(4);
+          socketIO.in(roomId).emit('ShowRoleAndMessage', JSON.stringify({'users': this.users}));
         }
-        // 角色牌堆更新
-        this.role.initRoleDeck(4);
-        socketIO.in(roomId).emit('ShowRoleAndMessage', JSON.stringify({'users': this.users}));
+        socket.removeAllListeners(state);
         chooseRole(socket, socketIO);
       } else
         distributeResource(socket, socketIO, message.user);
@@ -161,16 +161,7 @@ function  CenterController(roomId, users) {
    * 游戏阶段-选择角色阶段
    */
   var chooseRole = (socket, socketIO) => {
-    if (gameOver()) return;
-
     let state = GAME_STATE[2];
-
-    console.log({
-      'user': this.users[0].socketId,
-      'num': 0,
-      'role': this.role.parser()
-    });
-
 
     socket.emit(state, JSON.stringify({
       'user': this.users[0].socketId,

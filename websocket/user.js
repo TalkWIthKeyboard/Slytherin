@@ -38,7 +38,10 @@ function User(name, socketId) {
   this.buildHouse = (card) => {
     this.gold -= card_info[card].cost;
     for (let i = 0; i < this.cards.length; i++)
-      if (card === this.cards[i].cardName) this.cards.splice(i,1);
+      if (card === this.cards[i].cardName) {
+        this.cards.splice(i,1);
+        break;
+      }
     let _region = new Region();
     _region.init(card);
     this.regions.push(_region);
