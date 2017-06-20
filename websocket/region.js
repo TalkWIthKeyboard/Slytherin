@@ -16,3 +16,5 @@ function region() {
     this.star = _card.cost;
   }
 }
+
+module.exports = region;

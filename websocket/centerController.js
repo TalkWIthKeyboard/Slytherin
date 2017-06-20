@@ -8,7 +8,7 @@ const Role = require('./role').role;
 const RoleInfo = require('./role').roleInfo;
 const User = require('./user').user;
 
-let GAME_STATE = ['BEFORE_START', 'START_STAGE', 'CHOOSE_ROLE', 'PLAYER_TIME', 'DISTRIBUTE_RESOURCE', 'BUILD_HOUSE'];
+let GAME_STATE = ['BEFORE_START', 'START_STAGE', 'CHOOSE_ROLE', 'PLAYER_TIME', 'D_RESOURCE', 'BUILD_HOUSE'];
 let GAME_END_STATE = {
   'CHOOSE_ROLE': 'CHOOSE_ROLE_END',
   'PLAYER_TIME': 'PLAYER_TIME_END'
@@ -35,14 +35,14 @@ function  CenterController(roomId, users) {
   /**
    * 游戏阶段-玩家时间阶段-修建建筑
    */
-  let buildHouse = (socket) => {
+  let buildHouse = (socket, socketIO) => {
     this.state = GAME_STATE[5];
 
-    // msg: {'user':,'card':,}
+    // msg: {'user':,'num':,'card':,}
     socket.on(this.state, msg => {
       let message = JSON.parse(msg);
-      this.users[message.user].buildHouse(message.card);
-      socket.emit(this.state, JSON.stringify(this.parser()));
+      this.users[message.num].buildHouse(message.card);
+      socketIO.in(roomId).emit(this.state, JSON.stringify(this.parser()));
       socket.removeAllListeners(this.state);
     })
   };
@@ -53,28 +53,28 @@ function  CenterController(roomId, users) {
   let distributeResource = (socket, socketIO) => {
     this.state = GAME_STATE[4];
 
-    console.log(this.deck.optionCards());
     socket.emit('Licensing', JSON.stringify({cards: this.deck.optionCards()}));
 
     // msg: {'user':, 'choose':, 'num':}
     // choose 1 是选金币,2 是选第一张,3 是选第二张
-    socket.on(this.state, msg => {
+    socket.on('ChooseCard', msg => {
       let message = JSON.parse(msg);
       // 选择2块金币
       if (message.choose === 1)
-        this.users[message.user].getGold(2);
+        this.users[message.num].getGold(2);
       else
-        this.users[message.user].drawCard(this.deck.chooseCards(message.choose - 2));
+        this.users[message.num].drawCard(this.deck.chooseCards(message.choose - 2));
 
-      socketIO.in(roomId).emit(this.state, JSON.stringify({
-        num: message.num++,
-        user: this.users[message.usr].socketId,
+      socketIO.in(roomId).emit('ChooseCard', JSON.stringify({
+        num: message.num,
+        user: message.user,
         info: this.parser()
       }));
 
-      socket.removeAllListeners(this.state);
-      buildHouse();
-    })
+      socket.removeAllListeners('ChooseCard');
+      buildHouse(socket, socketIO);
+    });
+
   };
 
   /**
@@ -139,7 +139,6 @@ function  CenterController(roomId, users) {
         this.users.sort((a, b) => {
           return RoleInfo[a.role.roleName].number > RoleInfo[b.role.roleName].number
         });
-
         socketIO.in(roomId).emit(
           GAME_END_STATE[GAME_STATE[2]],
           JSON.stringify({'users': this.users})

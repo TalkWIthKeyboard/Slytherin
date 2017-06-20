@@ -58,7 +58,7 @@ let CARD_INFO = {
   },
   Cemetery: {
     name: 'Cemetery',
-    cn_name: '坟地',
+    cn_name: '墓地',
     color: 'purple',
     cost: 5,
     num: 1

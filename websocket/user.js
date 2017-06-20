@@ -34,9 +34,11 @@ function User(name, socketId) {
 
   this.buildHouse = (card) => {
     this.gold -= card_info[card].cost;
-    for (let i = 0; i < cards.length; i++)
-      if (card.cardName === cards[i].cardName) cards.splice(i,1);
-    this.regions.push(new Region(card));
+    for (let i = 0; i < this.cards.length; i++)
+      if (card === this.cards[i].cardName) this.cards.splice(i,1);
+    let _region = new Region();
+    _region.init(card);
+    this.regions.push(_region);
   };
 
   this.toString = () => {
@@ -57,7 +59,9 @@ function User(name, socketId) {
       regions: this.regions,
       gold: this.gold,
       role: this.role,
-      socketId: this.socketId
+      socketId: this.socketId,
+      open: this.open,
+      skill: this.skill
     };
   };
 }
