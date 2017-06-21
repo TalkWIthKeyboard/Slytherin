@@ -113,7 +113,7 @@ function  CenterController(roomId, users) {
 
     // 2. 寻找国王
     for (let i = 0; i < users.length; i++)
-      if (users[i].role.roleName === 'KING') {
+      if (users[i].role && users[i].role.roleName === 'KING') {
         this.king = i;
         break;
       }
