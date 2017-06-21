@@ -21,6 +21,8 @@ function  CenterController(roomId, users) {
   this.role = new RoleDeck();
   // 上一轮谁是国王
   this.king = 0;
+  // 是否已经洗牌
+  this.flag = false;
 
   /**
    * 判断游戏是否结束
@@ -29,7 +31,7 @@ function  CenterController(roomId, users) {
   let gameOver = () => {
     for (let i = 0; i < this.users.length; i ++)
       // TODO 修改
-      if (this.users[i].regions.length >= 2)
+      if (this.users[i].regions.length >= 8)
         return true;
     return false;
   };
@@ -123,13 +125,28 @@ function  CenterController(roomId, users) {
    * 计算分数
    */
   var workScore = () => {
-    let obj = {};
+    let obj = [];
+    let finished = 0;
     for (let i = 0; i < this.users.length; i++) {
       let score = 0;
-      for (let j = 0; j < this.users[i].regions.length; j++)
-          score += this.users[i].regions[j].star;
-      obj[this.users[i].socketId] = score;
+      let colorSum = 0;
+      let color = {'green': 0, 'yellow': 0, 'blue': 0, 'purple': 0, 'red': 0};
+
+      if (this.users[i].regions.length === 8) score += finished === 0 ? 4 : 2;
+
+      for (let j = 0; j < this.users[i].regions.length; j++) {
+        color[this.users[i].regions[j].color] = 1;
+        for (let each in color) colorSum += color[each];
+        score += colorSum === 5 ? 3 + this.users[i].regions[j].star : this.users[i].regions[j].star;
+      }
+
+      obj.push({socketId: this.users[i].socketId, name: this.users[i].name, score:score});
     }
+
+    obj.sort((a,b) => {
+      return a.score < b.score
+    });
+
     return obj;
   };
 
@@ -144,24 +161,28 @@ function  CenterController(roomId, users) {
       let message = JSON.parse(msg);
 
       if (message.user === '1' || message.user === '2') {
-        if (message.user === '1') {
-          if (gameOver()) {
-            let score = workScore();
-            socketIO.in(roomId).emit('GameOver', JSON.stringify(score));
-          } else {
-            // 排序为原来的顺序
-            reSort(this.users);
-            // 一回合的结束
-            for (let i = 0; i < this.users.length; i++) {
-              this.users[i].role = null;
-              this.users[i].open = false;
-              this.users[i].skill = false;
-            }
-            // 角色牌堆更新
-            this.role.initRoleDeck(4);
-            socketIO.in(roomId).emit('ShowRoleAndMessage', JSON.stringify({'users': this.users}));
+        if (!this.flag) {
+          this.flag = true;
+          // 排序
+          reSort(this.users);
+          // 一回合的结束
+          for (let i = 0; i < this.users.length; i++) {
+            this.users[i].role = null;
+            this.users[i].open = false;
+            this.users[i].skill = false;
           }
+          // 角色牌堆更新
+          this.role.initRoleDeck(4);
+          socketIO.in(roomId).emit('ShowRoleAndMessage', JSON.stringify({'users': this.users}));
+
+          setTimeout(() => {
+            this.flag = false;
+          }, 1000)
         }
+
+        if (message.user === '1' && gameOver())
+            socketIO.in(roomId).emit('GameOver', JSON.stringify({users:workScore()}));
+
         socket.removeAllListeners(state);
         chooseRole(socket, socketIO);
       } else
