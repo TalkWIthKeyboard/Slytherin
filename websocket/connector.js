@@ -166,7 +166,7 @@ let workTypeHall = async(socketIO, socket) => {
       let roomId = getRoomId();
       let _user = new RoomUser(msg.user.name, roomId);
       // TODO 测试修改
-      users.set(roomId, new Room(socketId, _user, msg.room.name, 4));
+      users.set(roomId, new Room(socketId, _user, msg.room.name, 2));
       socket.broadcast.emit('roomNumber', JSON.stringify({'room': GetRoomNumber(users)}));
       socket.emit('create', roomId);
     } else
@@ -215,6 +215,7 @@ let workTypePlay = async (socketIO, socket) => {
 pub.connect = (socketIO => {
   socketIO.on('connection', socket => {
     let pageType = socket.handshake.query.type;
+    socket.setMaxListeners(100);
     switch (pageType) {
       // 0. 大厅阶段
       case 'Hall':

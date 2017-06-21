@@ -47,6 +47,13 @@ function  CenterController(roomId, users) {
       let message = JSON.parse(msg);
       //
       if (message.card) this.users[message.num].buildHouse(message.card);
+      let role = this.users[message.num].role.roleName;
+
+      switch (role) {
+        case 'BUSINESSMAN':
+          this.users[message.num].getGold(1);
+          break;
+      }
       socketIO.in(roomId).emit(state, JSON.stringify({
         num: message.num,
         info: this.parser()
@@ -156,6 +163,9 @@ function  CenterController(roomId, users) {
   var playerTime = (socket, socketIO) => {
     let state = GAME_STATE[3];
 
+    socket.removeAllListeners(state);
+    socket.removeAllListeners('Skill');
+
     // msg: {'user':}
     socket.on(state, msg => {
       let message = JSON.parse(msg);
@@ -189,11 +199,43 @@ function  CenterController(roomId, users) {
         distributeResource(socket, socketIO, message.user);
     });
 
-    // msg: {'user':, 'num':}
+    // msg: {'num':}
     socket.on('Skill', msg => {
       // 技能附带效果
       let message = JSON.parse(msg);
-      this.users[msg.num].skill = true;
+
+
+      this.users[message.num].skill = true;
+      let role = this.users[message.num].role.roleName;
+      let count = 0;
+
+      // 执行技能
+      switch (role) {
+        case 'BUSINESSMAN':
+          for (let i = 0; i < this.users[message.num].regions.length; i++)
+            count += this.users[message.num].regions[i].color === 'green' ? 1 : 0;
+          this.users[message.num].getGold(count);
+          socketIO.in(roomId).emit('Skill', JSON.stringify(this.parser()));
+          break;
+        case 'BISHOP':
+          for (let i = 0; i < this.users[message.num].regions.length; i++)
+            count += this.users[message.num].regions[i].color === 'blue' ? 1 : 0;
+          this.users[message.num].getGold(count);
+          socketIO.in(roomId).emit('Skill', JSON.stringify(this.parser()));
+          break;
+        case 'KING':
+          for (let i = 0; i < this.users[message.num].regions.length; i++)
+            count += this.users[message.num].regions[i].color === 'yellow' ? 1 : 0;
+          this.users[message.num].getGold(count);
+          socketIO.in(roomId).emit('Skill', JSON.stringify(this.parser()));
+          break;
+        case 'WARLORD':
+          for (let i = 0; i < this.users[message.num].regions.length; i++)
+            count += this.users[message.num].regions[i].color === 'red' ? 1 : 0;
+          this.users[message.num].getGold(count);
+          socketIO.in(roomId).emit('Skill', JSON.stringify(this.parser()));
+          break;
+      }
       // 继续广播
     });
   };
