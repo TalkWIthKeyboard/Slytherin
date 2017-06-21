@@ -28,7 +28,8 @@ function  CenterController(roomId, users) {
    */
   let gameOver = () => {
     for (let i = 0; i < this.users.length; i ++)
-      if (this.users[i].regions.length >= 8)
+      // TODO 修改
+      if (this.users[i].regions.length >= 2)
         return true;
     return false;
   };
@@ -43,7 +44,7 @@ function  CenterController(roomId, users) {
     socket.on(state, msg => {
       let message = JSON.parse(msg);
       //
-      if (msg.card) this.users[message.num].buildHouse(message.card);
+      if (message.card) this.users[message.num].buildHouse(message.card);
       socketIO.in(roomId).emit(state, JSON.stringify({
         num: message.num,
         info: this.parser()
@@ -119,6 +120,20 @@ function  CenterController(roomId, users) {
   };
 
   /**
+   * 计算分数
+   */
+  var workScore = () => {
+    let obj = {};
+    for (let i = 0; i < this.users.length; i++) {
+      let score = 0;
+      for (let j = 0; j < this.users[i].regions.length; j++)
+          score += this.users[i].regions[j].star;
+      obj[this.users[i].socketId] = score;
+    }
+    return obj;
+  };
+
+  /**
    * 游戏阶段-玩家时间阶段
    */
   var playerTime = (socket, socketIO) => {
@@ -130,17 +145,22 @@ function  CenterController(roomId, users) {
 
       if (message.user === '1' || message.user === '2') {
         if (message.user === '1') {
-          // 排序为原来的顺序
-          reSort(this.users);
-          // 一回合的结束
-          for (let i = 0; i < this.users.length; i++) {
-            this.users[i].role = null;
-            this.users[i].open = false;
-            this.users[i].skill = false;
+          if (gameOver()) {
+            let score = workScore();
+            socketIO.in(roomId).emit('GameOver', JSON.stringify(score));
+          } else {
+            // 排序为原来的顺序
+            reSort(this.users);
+            // 一回合的结束
+            for (let i = 0; i < this.users.length; i++) {
+              this.users[i].role = null;
+              this.users[i].open = false;
+              this.users[i].skill = false;
+            }
+            // 角色牌堆更新
+            this.role.initRoleDeck(4);
+            socketIO.in(roomId).emit('ShowRoleAndMessage', JSON.stringify({'users': this.users}));
           }
-          // 角色牌堆更新
-          this.role.initRoleDeck(4);
-          socketIO.in(roomId).emit('ShowRoleAndMessage', JSON.stringify({'users': this.users}));
         }
         socket.removeAllListeners(state);
         chooseRole(socket, socketIO);
@@ -162,6 +182,8 @@ function  CenterController(roomId, users) {
    */
   var chooseRole = (socket, socketIO) => {
     let state = GAME_STATE[2];
+
+    if (gameOver()) return;
 
     socket.emit(state, JSON.stringify({
       'user': this.users[0].socketId,
