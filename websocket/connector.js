@@ -78,14 +78,22 @@ let workTypeRoom = (socketIO, socket) => {
 
 
   let sendMessage = (socketIO, roomId, emitCode, obj) => {
-    socketIO.in(roomId).emit(emitCode, JSON.stringify({
-      'users': parserMap(users.get(roomId).players),
-      obj,
-      'room': {
-        'num': users.get(roomId).number,
-        'name': users.get(roomId).name
-      }
-    }));
+    obj
+      ? socketIO.in(roomId).emit(emitCode, JSON.stringify({
+        'users': parserMap(users.get(roomId).players),
+        'room': {
+          'num': users.get(roomId).number,
+          'name': users.get(roomId).name
+        }
+      }))
+      : socketIO.in(roomId).emit(emitCode, JSON.stringify({
+        'users': parserMap(users.get(roomId).players),
+        obj,
+        'room': {
+          'num': users.get(roomId).number,
+          'name': users.get(roomId).name
+        }
+      }))
   };
 
   // 1. 进入房间
